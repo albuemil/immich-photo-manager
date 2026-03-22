@@ -1,0 +1,8 @@
+.DS_Store
+*.plugin
+.env
+.mcp.json
+node_modules/
+__pycache__/
+immich-mcp-server
+scripts/location_inventory.json

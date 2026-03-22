@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.immich-mcp</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/immich-mcp-server</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/usr/local/share/immich-mcp</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>IMMICH_BASE_URL</key>
+        <string>http://your-immich-server:2283</string>
+        <key>IMMICH_API_KEY</key>
+        <string>your-api-key-here</string>
+        <key>MCP_PORT</key>
+        <string>8626</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/immich-mcp.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/immich-mcp.error.log</string>
+</dict>
+</plist>

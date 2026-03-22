@@ -1,0 +1,25 @@
+{
+  "name": "immich-photo-manager",
+  "version": "0.1.0",
+  "description": "Intelligent photo management for Immich — search, curate geographic albums, clean up libraries, and publish galleries. The first MCP server for self-hosted photo management.",
+  "author": {
+    "name": "Drolosoft",
+    "email": "forge@drolosoft.com",
+    "url": "https://drolosoft.com"
+  },
+  "repository": "https://github.com/drolosoft/immich-photo-manager",
+  "homepage": "https://drolosoft.com",
+  "license": "MIT",
+  "keywords": [
+    "immich",
+    "photos",
+    "gallery",
+    "self-hosted",
+    "photo-management",
+    "albums",
+    "geographic",
+    "cleanup",
+    "mcp",
+    "claude"
+  ]
+}
