@@ -1,23 +1,47 @@
-# 📸 Immich Photo Manager
+# 📸🤖🗺️ immich-photo-manager
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager)](https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager)
 
-> **MCP server for intelligent photo management with [Immich](https://immich.app) — search, curate geographic albums, clean up libraries, and publish galleries.**
+> **Intelligent photo management for [Immich](https://immich.app) — your self-hosted library, understood.**
+
+If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, you know the feeling: thousands of photos with no GPS, duplicates scattered across Apple Photos and Google Takeout imports, screenshots mixed in with vacation shots, and albums that stopped being updated months ago. **immich-photo-manager** gives Claude direct access to your Immich instance through 16 MCP tools, plus 11 specialized skills that turn those tools into intelligent workflows — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive travel maps from your GPS data.
+
+This is a [Claude plugin](https://docs.claude.com) powered by an [MCP server](https://modelcontextprotocol.io). Install it, point it at your Immich instance, and talk to your photo library in plain English.
+
+<p align="center"><img src="assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
 ---
 
 ## 📑 Table of Contents
 
-- [Features](#-features)
-- [Quick Start](#-quick-start)
-- [Documentation](#-documentation)
-- [Commands](#-commands)
-- [Skills](#-skills)
-- [How It Works](#-how-it-works)
-- [Examples](#-examples)
-- [Deploy](#-deploy)
-- [Philosophy](#-philosophy)
-- [License](#-license)
+- [✨ Why immich-photo-manager?](#-why-immich-photo-manager)
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [📖 Commands](#-commands)
+- [🧩 Skills](#-skills)
+- [⚙️ How It Works](#️-how-it-works)
+- [💡 Examples](#-examples)
+- [📚 Documentation](#-documentation)
+- [🚀 Deploy](#-deploy)
+- [🔨 Building from Source](#-building-from-source)
+- [📜 License & Philosophy](#-license--philosophy)
+
+---
+
+## ✨ Why immich-photo-manager?
+
+Immich is excellent at storing, viewing, and searching your photos. But managing a large library — deduplication, metadata repair, album curation, storage analysis — still requires manual effort or custom scripts. immich-photo-manager bridges that gap by giving an AI assistant structured access to your library through the MCP protocol.
+
+| | Manual / scripts | immich-photo-manager |
+|:---:|---|---|
+| 🔍 | Write API calls, parse JSON | **Natural language** — "find my sunset photos from Italy" |
+| 🗺️ | Export GPS, cluster manually | **Geographic albums** — automatic GPS + CLIP + temporal matching |
+| 🧹 | Hash files, diff checksums | **Perceptual hashing** — finds re-encoded duplicates across import sources |
+| 📊 | Query database, build reports | **Library health** — one command for metadata quality, storage, recommendations |
+| 📅 | SQL queries on timestamps | **Timeline gaps** — detects empty months and single-source coverage risks |
+| 🔧 | EXIF tools, manual review | **Metadata fixer** — neighbor interpolation for missing GPS, broken timestamps |
+| 🛡️ | Hope you don't delete the wrong thing | **Safety first** — never deletes without showing findings and asking |
 
 ---
 
@@ -46,21 +70,10 @@
 
 ### Prerequisites
 
-- A running [Immich](https://immich.app) instance (self-hosted)
+- A running [Immich](https://immich.app) instance (self-hosted, v1.90+)
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
 - Go 1.24+ (to build the MCP server)
-
-### Additional dependencies
-
-Some skills scan files on disk and require Python packages:
-
-```bash
-pip3 install Pillow imagehash pillow-heif
-```
-
-- `Pillow` — image loading
-- `imagehash` — perceptual hashing (used by duplicate-report)
-- `pillow-heif` — HEIC/HEIF support (critical for Apple Photos libraries)
+- Claude Desktop with [Cowork mode](https://docs.claude.com), or [Claude Code](https://docs.claude.com/en/docs/claude-code) CLI
 
 ### Build & Run
 
@@ -92,21 +105,28 @@ Add to your `.mcp.json`:
 }
 ```
 
----
+That's it. Open Claude and say "how healthy is my photo library?" to get started.
 
-## 📚 Documentation
+### Additional dependencies (optional)
 
-For detailed guides and reference material, see the `doc/` directory:
+Some advanced skills require Python packages or direct database access:
 
-| Document | Description |
-|----------|-------------|
-| **[Getting Started](doc/GETTING-STARTED.md)** | Step-by-step installation, configuration, and first run guide. Covers prerequisites, environment setup, deployment options, and troubleshooting. |
-| **[Skills Reference](doc/SKILLS.md)** | Comprehensive reference for all 11 skills — trigger phrases, workflows, parameters, output formats, and dependency requirements for each. |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | Complete documentation of all 16 MCP tools exposed by the server — parameters, return types, examples, and architecture diagram. |
+```bash
+pip3 install Pillow imagehash pillow-heif
+```
+
+| Package | Used by | Purpose |
+|---------|---------|---------|
+| `Pillow` | duplicate-report | Image loading |
+| `imagehash` | duplicate-report | Perceptual hashing (pHash) |
+| `pillow-heif` | duplicate-report | HEIC/HEIF support (Apple Photos) |
+| PostgreSQL client | library-health, timeline-gaps, people-report, storage-optimizer | Database-level analysis |
 
 ---
 
 ## 📖 Commands
+
+Slash commands for common workflows — type them directly in Claude:
 
 | Command | Description |
 |---------|-------------|
@@ -119,9 +139,11 @@ For detailed guides and reference material, see the `doc/` directory:
 
 ## 🧩 Skills
 
+Skills are specialized workflows that combine MCP tools with domain knowledge. Each skill handles a specific photo management task end-to-end.
+
 ### 🗺️ Album Manager
 
-Create and curate albums organized by geography. Say "create an album from my Italy trip" and it searches by GPS + AI visual search, filters out junk, and builds a curated album with 20-50 photos.
+Create and curate albums organized by geography. Say "create an album from my Italy trip" and it searches by GPS + AI visual search, filters out junk, and builds a curated album with 20–50 photos.
 
 ### 🔍 Photo Search
 
@@ -149,7 +171,7 @@ Scans for broken or suspicious metadata — noon/midnight timestamps (from path-
 
 ### 🤖 Auto-Album Curator
 
-Monitors your library for new photos that match existing albums. Uses GPS proximity, CLIP visual similarity, and temporal patterns to suggest additions. Keeps your albums fresh without manual curation. Can run on a schedule.
+Monitors your library for new photos that match existing albums. Uses GPS proximity, CLIP visual similarity, and temporal patterns to suggest additions. Keeps your albums fresh without manual curation.
 
 ### 💾 Storage Optimizer
 
@@ -161,11 +183,20 @@ Analyzes Immich's face recognition data: who appears most, unnamed clusters wort
 
 ### 🌍 Travel Map
 
-Generates an interactive HTML map (Leaflet.js + MarkerCluster) with clustered pins showing every location where photos were taken. Includes photo counts, date ranges, and heatmap overlay. Outputs a standalone HTML file that can be hosted or viewed locally.
+Generates an interactive HTML map (Leaflet.js + MarkerCluster) with clustered pins showing every location where photos were taken. Includes photo counts, date ranges, and heatmap overlay. Outputs a standalone HTML file.
 
 ---
 
 ## ⚙️ How It Works
+
+### Architecture
+
+```
+Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
+                                     :8626          your-instance
+```
+
+The MCP server is a single Go binary built with [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0. It exposes 16 tools over Streamable HTTP transport on `/mcp`, with a health check on `/health`. All credentials are passed via environment variables — nothing is hardcoded.
 
 ### 16 MCP Tools
 
@@ -177,17 +208,7 @@ Generates an interactive HTML map (Leaflet.js + MarkerCluster) with clustered pi
 | 📁 Albums | `list_albums`, `get_album`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
 | 🔗 Sharing | `list_shared_links`, `create_shared_link`, `delete_shared_link` |
 
-### Architecture
-
-```
-Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
-                                     :8626          your-instance
-```
-
-- **Go MCP server** using [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0
-- Streamable HTTP transport on `/mcp`, health check on `/health`
-- Forces `tcp4` binding for IPv4 network compatibility
-- All credentials via environment variables (never hardcoded)
+Skills orchestrate these tools into multi-step workflows. For example, the Album Manager skill calls `get_map_markers` to find GPS clusters, `search_smart` to refine by visual similarity, `create_album` to build the album, and `add_assets_to_album` to populate it — all from a single natural language request.
 
 ---
 
@@ -261,6 +282,16 @@ Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
 
 ---
 
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[Getting Started](doc/GETTING-STARTED.md)** | Step-by-step installation, configuration, first run, deployment options, and troubleshooting |
+| **[Skills Reference](doc/SKILLS.md)** | Comprehensive reference for all 11 skills — workflows, triggers, parameters, output formats |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 16 MCP tools — parameters, return types, examples, architecture |
+
+---
+
 ## 🚀 Deploy
 
 ### macOS launchd
@@ -275,22 +306,48 @@ launchctl load ~/Library/LaunchAgents/com.immich-mcp.plist
 
 ### Nginx reverse proxy
 
-See `deploy/nginx-immich-mcp.conf.example` for a reverse proxy template.
+See `deploy/nginx-immich-mcp.conf.example` for a reverse proxy template with rate limiting.
 
 ---
 
-## 🧭 Philosophy
+## 🔨 Building from Source
 
-**Geography first, chronology second.** Photos are organized by place, not date. If you visited Mexico twice, you get one "Mexico" album (or sub-albums by city), not "Mexico 2018" and "Mexico 2023".
+**Prerequisites**: Go 1.24+
+
+```sh
+git clone https://github.com/drolosoft/immich-photo-manager.git
+cd immich-photo-manager
+go build -o immich-mcp-server .
+```
+
+The binary is pure Go with minimal dependencies (`mcp-go` for the MCP transport, `godotenv` for `.env` loading). No CGO, no Docker required — build it and run it.
+
+### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `IMMICH_BASE_URL` | `http://localhost:2283` | Immich server base URL |
+| `IMMICH_API_KEY` | *(required)* | Immich API key |
+| `MCP_PORT` | `8626` | MCP server port |
+
+Copy `.env.example` to `.env` and fill in your values, or export them directly.
+
+---
+
+## 📜 License & Philosophy
+
+**MIT License** — free to use, modify, and distribute.
+
+This project was born from a real library: 44,000 photos across Apple Photos, Google Takeout, and manual imports, accumulated over 12 years on a self-hosted Immich instance. Duplicates hiding behind different encodings. 30% of photos missing GPS. Timestamps corrupted by date-recovery tools. Albums that hadn't been updated in months.
+
+There was no single tool that could understand the full picture. So we built one — an MCP server that lets an AI assistant see your library the way you do, and help you fix what's broken.
+
+**Geography first, chronology second.** Photos are organized by place, not date. If you visited Mexico twice, you get one "Mexico" album, not "Mexico 2018" and "Mexico 2023".
 
 **Err on the side of more.** When creating albums automatically, the plugin creates more albums than you might want rather than fewer. It's easier to merge or delete an unwanted album than to discover a missing one.
 
 **Never delete without asking.** All destructive operations require explicit confirmation. Cleanup scans report findings and wait for your decision. Bulk operations default to dry-run mode.
 
----
-
-## 📜 License
-
-**MIT License** — free to use, modify, and distribute.
+This is **shared, not staffed**. It works, it's tested, and it solves the problem it was built for. If you find a bug, PRs are welcome. If you want a feature, fork it — that's what open source is for.
 
 **Forged by [Drolosoft](https://drolosoft.com)** · *Tools we wish existed*
