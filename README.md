@@ -29,6 +29,7 @@
 | 🧹 | **Library cleanup** | Detect screenshots, duplicates, and low-quality images with multi-signal analysis |
 | 🔗 | **Gallery publishing** | Create shared links to make albums publicly accessible |
 | 📊 | **Library stats** | Photo counts, video counts, storage usage at a glance |
+| 🔎 | **Duplicate report** | Deep cross-source duplicate analysis using perceptual hashing — finds re-encoded copies across Apple Photos, Google Photos, and other imports |
 | 🛡️ | **Safety first** | Never deletes automatically — always shows findings and asks before acting |
 
 ---
@@ -40,6 +41,18 @@
 - A running [Immich](https://immich.app) instance (self-hosted)
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
 - Go 1.24+ (to build the MCP server)
+
+### Additional dependencies for Duplicate Report
+
+The duplicate-report skill scans files on disk with perceptual hashing and requires Python packages:
+
+```bash
+pip3 install Pillow imagehash pillow-heif
+```
+
+- `Pillow` — image loading
+- `imagehash` — perceptual hashing (256-bit pHash)
+- `pillow-heif` — HEIC/HEIF support (critical for Apple Photos libraries)
 
 ### Build & Run
 
@@ -98,6 +111,12 @@ Natural language search across your entire library. "Find my sunset photos", "ph
 
 Detect screenshots (by screen resolution + missing GPS + no lens info), duplicates (exact hash + format duplicates + near-duplicates), and low-quality images. Reports findings with confidence levels and waits for your approval.
 
+### 🔎 Duplicate Report
+
+Deep duplicate analysis using perceptual hashing (pHash). Designed for libraries with photos imported from multiple ecosystems (Apple Photos, Google Takeout, manual folder copies) where the same photo gets re-encoded by each platform — making checksums and filenames useless for matching.
+
+The skill discovers import sources from Immich asset paths, scans files on disk with 256-bit perceptual hashes, computes cross-source overlap and internal duplicates, and generates a structured report with removal recommendations. Handles HEIC/HEIF natively. Processes ~40K photos in 10-15 minutes on Apple Silicon.
+
 ---
 
 ## ⚙️ How It Works
@@ -144,6 +163,16 @@ Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
 → Scans library using resolution + EXIF analysis
 → Reports findings by confidence level
 → "Want me to archive them?"
+```
+
+### Find and remove cross-ecosystem duplicates
+
+```
+"Run a duplicate report"
+→ Discovers import sources (Apple Photos, Google Photos, manual imports)
+→ Scans all image files with perceptual hashing (~15 min for 40K photos)
+→ Reports: 795 cross-source duplicates (4% overlap), 117 internal duplicates
+→ "Want me to remove the 912 duplicates? I'll keep the higher-quality source."
 ```
 
 ### Search naturally
