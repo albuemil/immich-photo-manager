@@ -27,9 +27,16 @@
 | 🔍 | **AI-powered search** | Natural language photo search via CLIP ("sunset at the beach", "birthday cake") |
 | 🗺️ | **Geographic albums** | Create albums organized by place — GPS + CLIP combined for smart curation |
 | 🧹 | **Library cleanup** | Detect screenshots, duplicates, and low-quality images with multi-signal analysis |
+| 🔎 | **Duplicate report** | Deep cross-source duplicate analysis using perceptual hashing — finds re-encoded copies across Apple Photos, Google Photos, and other imports |
+| 🏥 | **Library health** | Comprehensive health check — asset inventory, metadata quality, storage breakdown, and recommendations |
+| 📅 | **Timeline gaps** | Find missing months, sparse periods, and single-source coverage risks in your photo timeline |
+| 🔧 | **Metadata fixer** | Detect and repair broken dates (noon/midnight), missing GPS, wrong timezones — with neighbor interpolation |
+| 🤖 | **Auto-album curator** | Finds new photos that belong in existing albums using GPS, CLIP, and temporal matching |
+| 💾 | **Storage optimizer** | Identify RAW+JPEG pairs, oversized videos, and other space hogs with reclaimable space estimates |
+| 👥 | **People report** | Face recognition insights — who appears most, unnamed clusters worth naming, co-occurrence patterns |
+| 🌍 | **Travel map** | Interactive Leaflet.js map with clustered pins showing every place you've photographed |
 | 🔗 | **Gallery publishing** | Create shared links to make albums publicly accessible |
 | 📊 | **Library stats** | Photo counts, video counts, storage usage at a glance |
-| 🔎 | **Duplicate report** | Deep cross-source duplicate analysis using perceptual hashing — finds re-encoded copies across Apple Photos, Google Photos, and other imports |
 | 🛡️ | **Safety first** | Never deletes automatically — always shows findings and asks before acting |
 
 ---
@@ -42,16 +49,16 @@
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
 - Go 1.24+ (to build the MCP server)
 
-### Additional dependencies for Duplicate Report
+### Additional dependencies
 
-The duplicate-report skill scans files on disk with perceptual hashing and requires Python packages:
+Some skills scan files on disk and require Python packages:
 
 ```bash
 pip3 install Pillow imagehash pillow-heif
 ```
 
 - `Pillow` — image loading
-- `imagehash` — perceptual hashing (256-bit pHash)
+- `imagehash` — perceptual hashing (used by duplicate-report)
 - `pillow-heif` — HEIC/HEIF support (critical for Apple Photos libraries)
 
 ### Build & Run
@@ -115,7 +122,33 @@ Detect screenshots (by screen resolution + missing GPS + no lens info), duplicat
 
 Deep duplicate analysis using perceptual hashing (pHash). Designed for libraries with photos imported from multiple ecosystems (Apple Photos, Google Takeout, manual folder copies) where the same photo gets re-encoded by each platform — making checksums and filenames useless for matching.
 
-The skill discovers import sources from Immich asset paths, scans files on disk with 256-bit perceptual hashes, computes cross-source overlap and internal duplicates, and generates a structured report with removal recommendations. Handles HEIC/HEIF natively. Processes ~40K photos in 10-15 minutes on Apple Silicon.
+### 🏥 Library Health Report
+
+Comprehensive health assessment: asset inventory, import source breakdown, metadata completeness (GPS coverage, EXIF dates, camera info), file format distribution, and actionable recommendations. The "annual checkup" for your photo library.
+
+### 📅 Timeline Gaps
+
+Analyzes your photo timeline month by month to detect empty months, sparse periods, and single-source coverage risks. Answers questions like "if I delete Google Photos, which months would I lose?" and "are there months where I'm missing photos?"
+
+### 🔧 Metadata Fixer
+
+Scans for broken or suspicious metadata — noon/midnight timestamps (from path-recovered dates), missing GPS on geotagged trips, wrong timezones. Proposes corrections using folder structure, neighboring photos, and EXIF inference. All fixes require approval.
+
+### 🤖 Auto-Album Curator
+
+Monitors your library for new photos that match existing albums. Uses GPS proximity, CLIP visual similarity, and temporal patterns to suggest additions. Keeps your albums fresh without manual curation. Can run on a schedule.
+
+### 💾 Storage Optimizer
+
+Identifies the biggest storage consumers: RAW+JPEG pairs, oversized videos, large screenshots, format inefficiencies. Shows reclaimable space estimates, growth projections, and "months until disk full" calculations.
+
+### 👥 People Report
+
+Analyzes Immich's face recognition data: who appears most, unnamed clusters worth naming, co-occurrence patterns (people appearing together), timeline per person. Helps clean up the unnamed faces backlog.
+
+### 🌍 Travel Map
+
+Generates an interactive HTML map (Leaflet.js + MarkerCluster) with clustered pins showing every location where photos were taken. Includes photo counts, date ranges, and heatmap overlay. Outputs a standalone HTML file that can be hosted or viewed locally.
 
 ---
 
@@ -156,6 +189,46 @@ Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
 → Creates albums with curated selections (20-50 photos each)
 ```
 
+### Run a library health check
+
+```
+"How healthy is my library?"
+→ 44,579 assets (39,596 photos + 4,983 videos), 182 GB
+→ GPS coverage: 72.3%, EXIF dates: 89.1%
+→ 1,204 suspicious timestamps (noon/midnight)
+→ Recommends: metadata-fixer, timeline-gaps analysis
+```
+
+### Find and remove cross-ecosystem duplicates
+
+```
+"Run a duplicate report"
+→ Discovers import sources (Apple Photos, Google Photos)
+→ Scans 39,500 files with perceptual hashing (~15 min)
+→ Reports: 795 cross-source duplicates (4% overlap), 117 internal
+→ "Want me to remove the 912 duplicates?"
+```
+
+### Generate an interactive travel map
+
+```
+"Show me everywhere I've been"
+→ Extracts GPS from 28,616 geotagged photos
+→ Clusters into 47 locations across 14 countries
+→ Generates interactive HTML map with Leaflet.js
+→ Opens in browser with clustered pins, heatmap, and timeline
+```
+
+### Find gaps in your photo timeline
+
+```
+"Are there months I'm missing photos?"
+→ Coverage: Jan 2014 — Mar 2026 (147 months)
+→ 3 empty months: Aug 2015, Feb 2016, Nov 2019
+→ 7 sparse months (< 10% of average)
+→ Google Photos ends Dec 2023 — intentional?
+```
+
 ### Clean up your library
 
 ```
@@ -163,16 +236,6 @@ Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
 → Scans library using resolution + EXIF analysis
 → Reports findings by confidence level
 → "Want me to archive them?"
-```
-
-### Find and remove cross-ecosystem duplicates
-
-```
-"Run a duplicate report"
-→ Discovers import sources (Apple Photos, Google Photos, manual imports)
-→ Scans all image files with perceptual hashing (~15 min for 40K photos)
-→ Reports: 795 cross-source duplicates (4% overlap), 117 internal duplicates
-→ "Want me to remove the 912 duplicates? I'll keep the higher-quality source."
 ```
 
 ### Search naturally
