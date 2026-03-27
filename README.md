@@ -10,6 +10,7 @@
 
 - [Features](#-features)
 - [Quick Start](#-quick-start)
+- [Documentation](#-documentation)
 - [Commands](#-commands)
 - [Skills](#-skills)
 - [How It Works](#-how-it-works)
@@ -90,6 +91,18 @@ Add to your `.mcp.json`:
   }
 }
 ```
+
+---
+
+## 📚 Documentation
+
+For detailed guides and reference material, see the `doc/` directory:
+
+| Document | Description |
+|----------|-------------|
+| **[Getting Started](doc/GETTING-STARTED.md)** | Step-by-step installation, configuration, and first run guide. Covers prerequisites, environment setup, deployment options, and troubleshooting. |
+| **[Skills Reference](doc/SKILLS.md)** | Comprehensive reference for all 11 skills — trigger phrases, workflows, parameters, output formats, and dependency requirements for each. |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | Complete documentation of all 16 MCP tools exposed by the server — parameters, return types, examples, and architecture diagram. |
 
 ---
 
