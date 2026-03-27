@@ -1,9 +1,9 @@
-# 📸🧹🧽📍🗾 immich-photo-manager
+# 📸🧹🗺️ immich-photo-manager
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager)](https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager)
 
-> **📸🧹🧽📍🗾 MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
+> **📸🧹🗺️ MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
 If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, you know the feeling: thousands of photos with no GPS, duplicates scattered across Apple Photos and Google Takeout imports, screenshots mixed in with vacation shots, and albums that stopped being updated months ago. **immich-photo-manager** gives Claude direct access to your Immich instance through 16 MCP tools, plus 11 specialized skills that turn those tools into intelligent workflows — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive travel maps from your GPS data.
 
