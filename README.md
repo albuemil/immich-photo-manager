@@ -1,9 +1,9 @@
-# 📸🤖🗺️ immich-photo-manager
+# 📸🧹🧽📍🗾 immich-photo-manager
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager)](https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager)
 
-> **Intelligent photo management for [Immich](https://immich.app) — your self-hosted library, understood.**
+> **📸🧹🧽📍🗾 MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
 If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, you know the feeling: thousands of photos with no GPS, duplicates scattered across Apple Photos and Google Takeout imports, screenshots mixed in with vacation shots, and albums that stopped being updated months ago. **immich-photo-manager** gives Claude direct access to your Immich instance through 16 MCP tools, plus 11 specialized skills that turn those tools into intelligent workflows — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive travel maps from your GPS data.
 
@@ -56,7 +56,7 @@ Immich is excellent at storing, viewing, and searching your photos. But managing
 | 🏥 | **Library health** | Comprehensive health check — asset inventory, metadata quality, storage breakdown, and recommendations |
 | 📅 | **Timeline gaps** | Find missing months, sparse periods, and single-source coverage risks in your photo timeline |
 | 🔧 | **Metadata fixer** | Detect and repair broken dates (noon/midnight), missing GPS, wrong timezones — with neighbor interpolation |
-| 🤖 | **Auto-album curator** | Finds new photos that belong in existing albums using GPS, CLIP, and temporal matching |
+| 📌 | **Auto-album curator** | Finds new photos that belong in existing albums using GPS, CLIP, and temporal matching |
 | 💾 | **Storage optimizer** | Identify RAW+JPEG pairs, oversized videos, and other space hogs with reclaimable space estimates |
 | 👥 | **People report** | Face recognition insights — who appears most, unnamed clusters worth naming, co-occurrence patterns |
 | 🌍 | **Travel map** | Interactive Leaflet.js map with clustered pins showing every place you've photographed |
@@ -169,7 +169,7 @@ Analyzes your photo timeline month by month to detect empty months, sparse perio
 
 Scans for broken or suspicious metadata — noon/midnight timestamps (from path-recovered dates), missing GPS on geotagged trips, wrong timezones. Proposes corrections using folder structure, neighboring photos, and EXIF inference. All fixes require approval.
 
-### 🤖 Auto-Album Curator
+### 📌 Auto-Album Curator
 
 Monitors your library for new photos that match existing albums. Uses GPS proximity, CLIP visual similarity, and temporal patterns to suggest additions. Keeps your albums fresh without manual curation.
 

@@ -1,7 +1,7 @@
 {
   "name": "immich-photo-manager",
-  "version": "0.1.0",
-  "description": "Intelligent photo management for Immich — search, curate geographic albums, clean up libraries, and publish galleries. The first MCP server for self-hosted photo management.",
+  "version": "0.2.0",
+  "description": "📸🧹🧽📍🗾 MCP server for intelligent photo management with Immich — search, curate geographic albums, clean up libraries, analyze metadata, and publish galleries. The first MCP server for self-hosted photo management.",
   "author": {
     "name": "Drolosoft",
     "email": "forge@drolosoft.com",
@@ -19,6 +19,8 @@
     "albums",
     "geographic",
     "cleanup",
+    "duplicates",
+    "metadata",
     "mcp",
     "claude"
   ]
