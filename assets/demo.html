@@ -6,16 +6,16 @@
 <title>immich-photo-manager Demo</title>
 <style>
   :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --surface2: #0f3460;
-    --accent: #e94560;
-    --accent2: #533483;
-    --text: #eee;
-    --text-dim: #888;
-    --text-tool: #7dd3fc;
-    --green: #4ade80;
-    --orange: #fb923c;
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --accent: #da7756;
+    --accent2: #b8612e;
+    --text: #1a1a1a;
+    --text-dim: #6b6560;
+    --text-tool: #2563eb;
+    --green: #16a34a;
+    --orange: #ea580c;
     --radius: 12px;
     --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
@@ -30,20 +30,22 @@
     min-height: 100vh;
     padding: 20px;
   }
+
   .container {
     width: 900px;
     background: var(--surface);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
   }
+
   .header {
     background: var(--surface2);
     padding: 14px 24px;
     display: flex;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
   }
   .header-icon {
     width: 32px; height: 32px;
@@ -55,7 +57,7 @@
   .header-title { font-size: 15px; font-weight: 600; }
   .header-badge {
     font-size: 11px; padding: 2px 8px;
-    background: rgba(77,173,128,0.15);
+    background: rgba(22,163,74,0.1);
     color: var(--green); border-radius: 10px; font-weight: 500;
   }
   .header-right { margin-left: auto; font-size: 12px; color: var(--text-dim); }
@@ -66,9 +68,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    overflow-y: auto;
-    max-height: 600px;
   }
+
   .msg {
     max-width: 85%;
     opacity: 0;
@@ -78,8 +79,10 @@
   .msg.visible { opacity: 1; transform: translateY(0); }
   .msg.user { align-self: flex-end; }
   .msg.assistant { align-self: flex-start; }
+
   .msg-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; font-weight: 500; }
   .msg.user .msg-label { text-align: right; }
+
   .msg-bubble {
     padding: 12px 16px;
     border-radius: var(--radius);
@@ -88,15 +91,16 @@
   }
   .msg.user .msg-bubble {
     background: var(--surface2);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(0,0,0,0.06);
   }
   .msg.assistant .msg-bubble {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,0.08);
   }
+
   .tool-call {
-    background: rgba(125,211,252,0.06);
-    border: 1px solid rgba(125,211,252,0.15);
+    background: rgba(37,99,235,0.04);
+    border: 1px solid rgba(37,99,235,0.12);
     border-radius: 8px;
     padding: 10px 14px;
     margin: 8px 0;
@@ -106,7 +110,9 @@
   .tool-call-header {
     color: var(--text-tool);
     font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .tool-call-header::before { content: '\26A1'; }
   .tool-call-params {
@@ -114,6 +120,7 @@
     margin-top: 4px;
     padding-left: 20px;
   }
+
   .photo-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -125,8 +132,8 @@
     border-radius: 6px;
     background-size: cover;
     background-position: center;
-    background-color: #1a2a3a;
   }
+
   .scene-sep {
     text-align: center;
     padding: 8px;
@@ -135,29 +142,39 @@
   }
   .scene-sep.visible { opacity: 1; }
   .scene-sep span {
-    font-size: 11px; color: var(--text-dim);
+    font-size: 11px;
+    color: var(--text-dim);
     background: var(--surface);
-    padding: 4px 16px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.06);
+    padding: 4px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.06);
   }
+
   .success-block {
-    background: rgba(74,222,128,0.08);
-    border: 1px solid rgba(74,222,128,0.2);
+    background: rgba(22,163,74,0.06);
+    border: 1px solid rgba(22,163,74,0.15);
     border-radius: 8px;
-    padding: 12px 14px; margin: 8px 0;
-    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   .success-icon { font-size: 20px; }
   .success-text { font-size: 13px; color: var(--green); font-weight: 500; }
+
   .cleanup-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px; margin: 10px 0;
+    gap: 8px;
+    margin: 10px 0;
   }
   .cleanup-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px; padding: 10px; text-align: center;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
   }
   .cleanup-card .emoji { font-size: 20px; }
   .cleanup-card .val { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
@@ -168,16 +185,30 @@
   .cleanup-card.screenshots .val { color: var(--orange); }
   .cleanup-card.duplicates .val { color: var(--accent); }
   .cleanup-card.reclaimable .val { color: var(--green); }
-  .progress-bar { height: 3px; background: rgba(255,255,255,0.06); }
+
+  .progress-bar { height: 3px; background: rgba(0,0,0,0.06); }
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
-    width: 0%; transition: width 0.5s linear;
+    width: 0%;
+    transition: width 0.5s linear;
   }
   .watermark {
-    text-align: center; padding: 10px;
-    font-size: 11px; color: var(--text-dim); opacity: 0.5;
+    text-align: center;
+    padding: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.5;
   }
+
+  .p-mexico1 { background: linear-gradient(135deg, #1a5276, #d4ac0d, #e67e22); }
+  .p-mexico2 { background: linear-gradient(160deg, #0e6655, #1abc9c, #f39c12); }
+  .p-mexico3 { background: linear-gradient(145deg, #2471a3, #5dade2, #f5b041); }
+  .p-mexico4 { background: linear-gradient(120deg, #1b4f72, #2e86c1, #e74c3c); }
+  .p-mexico5 { background: linear-gradient(155deg, #0b5345, #27ae60, #f4d03f); }
+  .p-mexico6 { background: linear-gradient(130deg, #154360, #3498db, #e67e22); }
+  .p-mexico7 { background: linear-gradient(140deg, #1a5276, #45b39d, #f39c12); }
+  .p-mexico8 { background: linear-gradient(125deg, #0e6251, #1abc9c, #d35400); }
 </style>
 </head>
 <body>
@@ -190,7 +221,6 @@
   </div>
 
   <div class="chat" id="chat">
-    <!-- Scene 1: Search -->
     <div class="msg user" id="s1-user">
       <div class="msg-label">You</div>
       <div class="msg-bubble">Find my photos from Mexico</div>
@@ -204,19 +234,18 @@
         </div>
         Found <strong>10 photos</strong> from Mexico, taken in September 2021:
         <div class="photo-grid">
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/4ac03d81-ea32-497e-b753-62210d87559d/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/70504703-4769-48fa-9f09-7b9d0597e73b/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/611aad81-c6c4-4a16-8fb5-c72057ce651e/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/e71f0119-130e-4cc6-bf76-ae38ef6b47b4/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/eda91b1a-a722-43ae-a784-2554cc4acb52/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/6b660aeb-f647-472d-8cc3-76375a0f60df/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/5a42cdfd-afd4-4808-84db-9f5ce3dc6e8a/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
-          <div class="photo-thumb" style="background-image:url('http://localhost:3001/api/assets/4ac03d81-ea32-497e-b753-62210d87559d/thumbnail?key=PLa3weHKVQrv89IgUdTVPjaco0s2yLcWGuXkQ331zXlxkRJiiNhErLGGPYsudTxr5_w')"></div>
+          <div class="photo-thumb p-mexico1"></div>
+          <div class="photo-thumb p-mexico2"></div>
+          <div class="photo-thumb p-mexico3"></div>
+          <div class="photo-thumb p-mexico4"></div>
+          <div class="photo-thumb p-mexico5"></div>
+          <div class="photo-thumb p-mexico6"></div>
+          <div class="photo-thumb p-mexico7"></div>
+          <div class="photo-thumb p-mexico8"></div>
         </div>
       </div>
     </div>
 
-    <!-- Scene 2: Create Album -->
     <div class="scene-sep" id="s2-sep"><span>· · ·</span></div>
     <div class="msg user" id="s2-user">
       <div class="msg-label">You</div>
@@ -240,7 +269,6 @@
       </div>
     </div>
 
-    <!-- Scene 3: Library Cleanup -->
     <div class="scene-sep" id="s3-sep"><span>· · ·</span></div>
     <div class="msg user" id="s3-user">
       <div class="msg-label">You</div>
@@ -296,17 +324,18 @@
   ];
 
   const totalDuration = sequence.reduce((sum, s) => sum + s.delay, 0);
+  let elapsed = 0;
 
   function play() {
     const progress = document.getElementById('progress');
-    const chat = document.getElementById('chat');
     let cumDelay = 0;
 
     sequence.forEach(step => {
       cumDelay += step.delay;
       const d = cumDelay;
       setTimeout(() => {
-        progress.style.width = ((d / totalDuration) * 100) + '%';
+        elapsed = d;
+        progress.style.width = ((elapsed / totalDuration) * 100) + '%';
         const el = document.getElementById(step.id);
         if (el) {
           el.classList.add('visible');
