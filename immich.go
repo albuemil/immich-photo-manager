@@ -213,3 +213,56 @@ func (c *ImmichClient) DeleteSharedLink(linkID string) error {
 	_, err := c.request("DELETE", "/shared-links/"+linkID, nil, nil)
 	return err
 }
+
+// ── Thumbnails ─────────────────────────────────────────
+
+// ThumbnailSize controls the image size returned by Immich.
+type ThumbnailSize string
+
+const (
+	ThumbnailSmall   ThumbnailSize = "thumbnail" // ~250px, WebP
+	ThumbnailPreview ThumbnailSize = "preview"   // ~1440px, JPEG
+)
+
+// GetAssetThumbnail fetches the raw image bytes for an asset thumbnail.
+// Returns the bytes and the content-type header (e.g. "image/webp", "image/jpeg").
+func (c *ImmichClient) GetAssetThumbnail(assetID string, size ThumbnailSize) ([]byte, string, error) {
+	params := url.Values{}
+	if size == ThumbnailPreview {
+		params.Set("size", "preview")
+	}
+
+	u := c.BaseURL + "/api/assets/" + assetID + "/thumbnail"
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("x-api-key", c.APIKey)
+	req.Header.Set("Accept", "image/*")
+
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("fetch thumbnail: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("read thumbnail: %w", err)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "image/jpeg"
+	}
+	return data, contentType, nil
+}

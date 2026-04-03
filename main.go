@@ -6,12 +6,14 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -494,5 +496,121 @@ func registerTools(s *server.MCPServer) {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 		return mcp.NewToolResultText(jsonStr(map[string]any{"deleted": true, "link_id": linkID})), nil
+	})
+
+	// ── Thumbnails ─────────────────────────────────────────
+
+	s.AddTool(mcp.NewTool("get_asset_thumbnail",
+		mcp.WithDescription("Get a base64-encoded thumbnail image for an asset. Returns the image data as a base64 string with its MIME type. Use size='thumbnail' for grid views (~250px) or size='preview' for lightbox (~1440px)."),
+		mcp.WithString("asset_id", mcp.Required(), mcp.Description("The unique ID of the asset.")),
+		mcp.WithString("size", mcp.Description("'thumbnail' (default, ~250px) or 'preview' (~1440px).")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		assetID := argStr(req, "asset_id")
+		sizeStr := argStr(req, "size")
+		size := ThumbnailSmall
+		if sizeStr == "preview" {
+			size = ThumbnailPreview
+		}
+
+		data, contentType, err := client.GetAssetThumbnail(assetID, size)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+
+		b64 := base64.StdEncoding.EncodeToString(data)
+
+		// Normalize MIME type
+		mimeType := contentType
+		if i := strings.Index(mimeType, ";"); i >= 0 {
+			mimeType = mimeType[:i]
+		}
+		mimeType = strings.TrimSpace(mimeType)
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.NewImageContent(b64, mimeType),
+			},
+		}, nil
+	})
+
+	s.AddTool(mcp.NewTool("get_album_thumbnails",
+		mcp.WithDescription("Get base64-encoded thumbnails for multiple assets in an album. Returns up to 'count' thumbnails as an array of {asset_id, data, mime_type} objects. Ideal for generating visual grids in Cowork."),
+		mcp.WithString("album_id", mcp.Required(), mcp.Description("The album's unique ID.")),
+		mcp.WithNumber("count", mcp.Description("Number of thumbnails to fetch (default 12, max 24).")),
+		mcp.WithNumber("offset", mcp.Description("Skip this many assets from the start (default 0).")),
+	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		albumID := argStr(req, "album_id")
+		count := int(argFloat(req, "count", 12))
+		offset := int(argFloat(req, "offset", 0))
+		if count > 24 {
+			count = 24
+		}
+
+		// Get album to extract asset IDs
+		result, err := client.GetAlbum(albumID)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		var album map[string]any
+		json.Unmarshal(result, &album)
+
+		var assetIDs []string
+		if assets, ok := album["assets"].([]any); ok {
+			for _, a := range assets {
+				if m, ok := a.(map[string]any); ok {
+					if id, ok := m["id"].(string); ok {
+						assetIDs = append(assetIDs, id)
+					}
+				}
+			}
+		}
+
+		// Apply offset and count
+		if offset >= len(assetIDs) {
+			return mcp.NewToolResultText(jsonStr(map[string]any{
+				"album_id":   albumID,
+				"album_name": album["albumName"],
+				"total":      len(assetIDs),
+				"thumbnails": []any{},
+			})), nil
+		}
+		assetIDs = assetIDs[offset:]
+		if count > len(assetIDs) {
+			count = len(assetIDs)
+		}
+		assetIDs = assetIDs[:count]
+
+		// Fetch thumbnails
+		type thumbResult struct {
+			AssetID  string `json:"asset_id"`
+			Data     string `json:"data"`
+			MimeType string `json:"mime_type"`
+		}
+		thumbnails := make([]thumbResult, 0, count)
+		for _, id := range assetIDs {
+			data, contentType, err := client.GetAssetThumbnail(id, ThumbnailSmall)
+			if err != nil {
+				log.Printf("Thumbnail fetch failed for %s: %v", id, err)
+				continue
+			}
+			mimeType := contentType
+			if i := strings.Index(mimeType, ";"); i >= 0 {
+				mimeType = mimeType[:i]
+			}
+			thumbnails = append(thumbnails, thumbResult{
+				AssetID:  id,
+				Data:     base64.StdEncoding.EncodeToString(data),
+				MimeType: strings.TrimSpace(mimeType),
+			})
+		}
+
+		out := map[string]any{
+			"album_id":   albumID,
+			"album_name": album["albumName"],
+			"total":      len(assetIDs),
+			"offset":     offset,
+			"thumbnails": thumbnails,
+		}
+		return mcp.NewToolResultText(jsonStr(out)), nil
 	})
 }
