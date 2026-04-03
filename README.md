@@ -1,7 +1,13 @@
-# 📸🧹🗺️ immich-photo-manager
+<p align="center">
+  <img src="assets/icon.png" alt="immich-photo-manager" width="100">
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Report Card](https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager)](https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager)
+<h1 align="center">immich-photo-manager</h1>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager"><img src="https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager" alt="Go Report Card"></a>
+</p>
 
 > **📸🧹🗺️ MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
@@ -197,7 +203,9 @@ For bug reports and feature requests, use [GitHub Issues](https://github.com/dro
 
 If immich-photo-manager saved you time or made your photo library easier to manage, consider buying me a coffee — it keeps the next one coming!
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/juan.andres.morenorub.io)
+<p align="center">
+<a href="https://buymeacoffee.com/juan.andres.morenorub.io"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
+</p>
 
 ---
 
