@@ -577,7 +577,7 @@ func registerTools(s *server.MCPServer) {
 				"album_id":     albumID,
 				"album_name":   album["albumName"],
 				"total_assets": totalAssets,
-				"immich_url":   baseURL,
+				"immich_url":   client.BaseURL,
 				"thumbnails":   []any{},
 			})), nil
 		}
@@ -618,7 +618,7 @@ func registerTools(s *server.MCPServer) {
 			"total_assets": totalAssets,
 			"offset":       offset,
 			"count":        len(thumbnails),
-			"immich_url":   baseURL,
+			"immich_url":   client.BaseURL,
 			"thumbnails":   thumbnails,
 		}
 		return mcp.NewToolResultText(jsonStr(out)), nil
