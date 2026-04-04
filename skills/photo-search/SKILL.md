@@ -7,7 +7,7 @@ description: >
   "where are my photos of", "do I have photos of", "find all screenshots",
   "photos taken with", "photos from 2019", "photos near", "photos of [person]",
   or any variation of searching, browsing, or exploring their photo library.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Photo Search
@@ -60,8 +60,47 @@ When showing search results:
 - **Count first**: "Found 147 photos matching your search"
 - **Date range**: "Spanning from June 2019 to June 2023"
 - **Location summary**: "Across 3 locations: Rome, Florence, Venice"
+- **Visual preview**: Show thumbnail samples inline (see Thumbnail Display below)
 - **Quality note**: "12 appear to be screenshots (no GPS, screen resolution)"
 - **Action prompt**: Suggest next steps (create album, refine search, clean up)
+
+## Thumbnail Display
+
+**ALWAYS show visual thumbnails** when presenting search results. Never list asset IDs as plain text — users need to *see* their photos.
+
+### How it works — the HTML pipeline
+
+Thumbnail data (base64 WebP) always exceeds the Cowork context window limit. **This is expected.** Cowork automatically saves the response to a temp file. The pipeline:
+
+1. Call `get_album_thumbnails` → response overflows to temp file (this is normal)
+2. Extract the file path from the overflow message
+3. Use Python to read the file, build an HTML viewer with embedded images
+4. Write HTML to Documents folder, share via `computer://` link
+
+**Cost: ~580 tokens per request regardless of photo count.** The base64 never enters context.
+
+### For search results
+
+After a search returns asset IDs, you can show thumbnails by:
+1. Creating a temporary album with the results, OR
+2. Using `get_asset_thumbnail` one at a time for 1-3 specific photos (these also overflow but are simpler for single confirmations)
+
+For bulk results, prefer `get_album_thumbnails` if the photos are already in an album.
+
+### HTML viewer standard
+
+Generated HTML should include:
+- **Sticky header** with title + "Showing N of M photos"
+- **Paginated grid** with skeleton placeholders and infinite scroll
+- **Clickable photos** linking to `{immich_url}/photos/{asset_id}`
+- **Back-to-top** button
+- **Footer** with remaining count + link to full album in Immich
+- Dark theme, accent color #da7756
+
+### Guidelines
+- Show **all photos** for small sets (≤50), use `count=20` + pagination for larger sets
+- Every thumbnail MUST link to its Immich entity
+- After showing results, offer: "Want to see more?", "Create an album with these?", "Refine search?"
 
 ## Advanced Search Patterns
 

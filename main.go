@@ -534,17 +534,14 @@ func registerTools(s *server.MCPServer) {
 	})
 
 	s.AddTool(mcp.NewTool("get_album_thumbnails",
-		mcp.WithDescription("Get base64-encoded thumbnails for multiple assets in an album. Returns up to 'count' thumbnails as an array of {asset_id, data, mime_type} objects. Ideal for generating visual grids in Cowork."),
+		mcp.WithDescription("Get base64-encoded thumbnails for assets in an album. Returns {asset_id, data, mime_type} objects plus total_assets and immich_url for linking. By default returns ALL photos in the album. Use count/offset to paginate large albums."),
 		mcp.WithString("album_id", mcp.Required(), mcp.Description("The album's unique ID.")),
-		mcp.WithNumber("count", mcp.Description("Number of thumbnails to fetch (default 12, max 24).")),
+		mcp.WithNumber("count", mcp.Description("Number of thumbnails to fetch. Default 0 means ALL photos in the album.")),
 		mcp.WithNumber("offset", mcp.Description("Skip this many assets from the start (default 0).")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		albumID := argStr(req, "album_id")
-		count := int(argFloat(req, "count", 12))
+		count := int(argFloat(req, "count", 0))
 		offset := int(argFloat(req, "offset", 0))
-		if count > 24 {
-			count = 24
-		}
 
 		// Get album to extract asset IDs
 		result, err := client.GetAlbum(albumID)
@@ -554,43 +551,53 @@ func registerTools(s *server.MCPServer) {
 		var album map[string]any
 		json.Unmarshal(result, &album)
 
-		var assetIDs []string
+		type assetMeta struct {
+			ID   string
+			Date string
+		}
+		var assetList []assetMeta
 		if assets, ok := album["assets"].([]any); ok {
 			for _, a := range assets {
 				if m, ok := a.(map[string]any); ok {
-					if id, ok := m["id"].(string); ok {
-						assetIDs = append(assetIDs, id)
+					id, _ := m["id"].(string)
+					date, _ := m["fileCreatedAt"].(string)
+					if id != "" {
+						assetList = append(assetList, assetMeta{ID: id, Date: date})
 					}
 				}
 			}
 		}
 
+		// Capture total before slicing
+		totalAssets := len(assetList)
+
 		// Apply offset and count
-		if offset >= len(assetIDs) {
+		if offset >= totalAssets {
 			return mcp.NewToolResultText(jsonStr(map[string]any{
-				"album_id":   albumID,
-				"album_name": album["albumName"],
-				"total":      len(assetIDs),
-				"thumbnails": []any{},
+				"album_id":     albumID,
+				"album_name":   album["albumName"],
+				"total_assets": totalAssets,
+				"immich_url":   baseURL,
+				"thumbnails":   []any{},
 			})), nil
 		}
-		assetIDs = assetIDs[offset:]
-		if count > len(assetIDs) {
-			count = len(assetIDs)
+		assetList = assetList[offset:]
+		if count > 0 && count < len(assetList) {
+			assetList = assetList[:count]
 		}
-		assetIDs = assetIDs[:count]
 
 		// Fetch thumbnails
 		type thumbResult struct {
 			AssetID  string `json:"asset_id"`
+			Date     string `json:"date,omitempty"`
 			Data     string `json:"data"`
 			MimeType string `json:"mime_type"`
 		}
-		thumbnails := make([]thumbResult, 0, count)
-		for _, id := range assetIDs {
-			data, contentType, err := client.GetAssetThumbnail(id, ThumbnailSmall)
+		thumbnails := make([]thumbResult, 0, len(assetList))
+		for _, asset := range assetList {
+			data, contentType, err := client.GetAssetThumbnail(asset.ID, ThumbnailSmall)
 			if err != nil {
-				log.Printf("Thumbnail fetch failed for %s: %v", id, err)
+				log.Printf("Thumbnail fetch failed for %s: %v", asset.ID, err)
 				continue
 			}
 			mimeType := contentType
@@ -598,18 +605,21 @@ func registerTools(s *server.MCPServer) {
 				mimeType = mimeType[:i]
 			}
 			thumbnails = append(thumbnails, thumbResult{
-				AssetID:  id,
+				AssetID:  asset.ID,
+				Date:     asset.Date,
 				Data:     base64.StdEncoding.EncodeToString(data),
 				MimeType: strings.TrimSpace(mimeType),
 			})
 		}
 
 		out := map[string]any{
-			"album_id":   albumID,
-			"album_name": album["albumName"],
-			"total":      len(assetIDs),
-			"offset":     offset,
-			"thumbnails": thumbnails,
+			"album_id":     albumID,
+			"album_name":   album["albumName"],
+			"total_assets": totalAssets,
+			"offset":       offset,
+			"count":        len(thumbnails),
+			"immich_url":   baseURL,
+			"thumbnails":   thumbnails,
 		}
 		return mcp.NewToolResultText(jsonStr(out)), nil
 	})

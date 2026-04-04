@@ -7,7 +7,7 @@ description: >
   "geographic albums", "album from my trip to X", "share this album",
   or any variation of creating, managing, or publishing photo albums in Immich.
   Also triggers on "what albums do I have", "list albums", "album stats".
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Album Manager
@@ -132,6 +132,85 @@ When asked to update or refine an existing album:
 2. Search for additional photos that might belong (expanded date range, nearby GPS, related CLIP queries)
 3. Present additions and potential removals to the user
 4. Apply changes after approval
+
+## Thumbnail Display
+
+**ALWAYS show visual thumbnails** when presenting album contents or creation results. Never list asset IDs as plain text — users need to *see* their photos.
+
+### How it works — the HTML pipeline
+
+Thumbnail data (base64-encoded WebP) is too large for the context window. **This is expected and by design.** Cowork automatically saves large MCP responses to a temp file. The pipeline is:
+
+1. Call `get_album_thumbnails` → Cowork saves the response to a temp file (the "overflow")
+2. The overflow message contains the file path — extract it
+3. Use Python to read the temp file and build an HTML viewer
+4. Write the HTML to the user's Documents folder
+5. Share via `computer://` link — user opens in their browser
+
+**This costs only ~580 tokens per request**, regardless of how many photos. The base64 data never enters the context window.
+
+### Step-by-step
+
+**1. Fetch thumbnails:**
+```
+get_album_thumbnails(album_id="uuid-here")             # ALL photos (default)
+get_album_thumbnails(album_id="uuid-here", count=12)   # First 12 photos
+get_album_thumbnails(album_id="uuid-here", count=12, offset=24)  # Photos 25-36
+```
+
+**2. Build HTML from the saved temp file:**
+```python
+import json
+
+with open('<OVERFLOW_FILE_PATH>') as f:
+    raw = json.loads(f.read())
+
+for item in raw:
+    if item.get('type') == 'text':
+        data = json.loads(item['text'])
+        break
+
+album_name = data['album_name']
+total_assets = data['total_assets']   # Full album count
+immich_url = data['immich_url']       # For linking to Immich
+thumbs = data['thumbnails']           # [{asset_id, data, mime_type}, ...]
+
+# Build HTML with embedded base64 images
+# Each image should link to: {immich_url}/photos/{asset_id}
+# Header: album name + "Showing N of M photos"
+# Footer: link to full album at {immich_url}/albums/{album_id}
+```
+
+**3. Share the result:**
+```
+[View album](computer:///sessions/.../mnt/Documents/album-name.html)
+```
+
+### MCP response fields
+The `get_album_thumbnails` response includes:
+- `album_id` — Album UUID
+- `album_name` — Album display name
+- `total_assets` — Total photos in the album (not just the fetched count)
+- `count` — Number of thumbnails actually returned
+- `offset` — Starting offset used
+- `immich_url` — Base URL for building links to photos and albums
+- `thumbnails[]` — Array of `{asset_id, data, mime_type}`
+
+### HTML viewer features
+The generated HTML should include:
+- **Sticky header** with album name and "Showing N of M photos"
+- **Paginated grid** — show 6-12 at a time, infinite scroll for more
+- **Skeleton placeholders** with shimmer animation while images load
+- **Clickable photos** — each links to `{immich_url}/photos/{asset_id}`
+- **Back-to-top** floating button
+- **Footer** with count of remaining photos + link to full album in Immich
+- Dark theme with the immich-photo-manager brand (accent: #da7756)
+
+### Guidelines
+- Default to **ALL photos** for small albums (≤50 photos)
+- Use `count=20` for large albums, offer "Load more" or pagination
+- Every photo MUST link to its Immich entity: `{immich_url}/photos/{asset_id}`
+- After showing thumbnails, offer next actions: "Want to see more?", "Add more photos?", "Remove any of these?"
 
 ## Reference Files
 
