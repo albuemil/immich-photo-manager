@@ -8,10 +8,28 @@ description: >
   "library health check", "photo dedup report", "run duplicate analysis",
   "compare my photo sources", or any variation of wanting to understand duplicate photos
   across import sources.
-version: 0.1.0
+version: 1.0.0
 ---
 
 # Duplicate Report
+
+## ⚠️ Connection Required — ALWAYS CHECK FIRST
+
+**Before doing ANYTHING else in this skill, call `ping` on the Immich MCP server.**
+
+- If `ping` succeeds → proceed with the skill normally.
+- If `ping` fails or the MCP tools are not available → **STOP. Do not continue.** Tell the user:
+
+> ❌ **Immich is not connected.** This plugin needs a running Immich MCP server to work.
+>
+> Run **/setup** to configure your Immich connection. You'll need:
+> 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
+> 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+> 3. The MCP server running (`./immich-mcp-server`)
+>
+> Nothing in this plugin will work until the connection is configured.
+
+**Do NOT skip this check. Do NOT try to run any other tool first. Always ping, always block if it fails.**
 
 Generate a comprehensive duplicate analysis of an Immich photo library. Uses perceptual hashing to find visually identical photos even when they have different checksums (common when photos are exported from Apple Photos and Google Photos).
 

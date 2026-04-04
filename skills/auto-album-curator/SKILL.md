@@ -8,10 +8,28 @@ description: >
   "curate albums", "auto-curate", "keep albums fresh", "album suggestions",
   "what new photos belong in my albums", "smart album update",
   or any variation of wanting to keep their albums up to date with recent imports.
-version: 0.1.0
+version: 1.0.0
 ---
 
 # Auto-Album Curator
+
+## ⚠️ Connection Required — ALWAYS CHECK FIRST
+
+**Before doing ANYTHING else in this skill, call `ping` on the Immich MCP server.**
+
+- If `ping` succeeds → proceed with the skill normally.
+- If `ping` fails or the MCP tools are not available → **STOP. Do not continue.** Tell the user:
+
+> ❌ **Immich is not connected.** This plugin needs a running Immich MCP server to work.
+>
+> Run **/setup** to configure your Immich connection. You'll need:
+> 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
+> 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+> 3. The MCP server running (`./immich-mcp-server`)
+>
+> Nothing in this plugin will work until the connection is configured.
+
+**Do NOT skip this check. Do NOT try to run any other tool first. Always ping, always block if it fails.**
 
 Analyze new photos against existing albums and suggest additions. Uses GPS proximity, CLIP visual similarity, and temporal patterns to find photos that belong in an album but haven't been added yet.
 

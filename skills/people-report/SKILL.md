@@ -7,10 +7,28 @@ description: >
   "unnamed faces", "face recognition", "how many people", "people stats",
   "who appears most", "tag my faces", "face cleanup", "person report",
   or any variation of wanting to understand the people in their photo library.
-version: 0.1.0
+version: 1.0.0
 ---
 
 # People Report
+
+## ⚠️ Connection Required — ALWAYS CHECK FIRST
+
+**Before doing ANYTHING else in this skill, call `ping` on the Immich MCP server.**
+
+- If `ping` succeeds → proceed with the skill normally.
+- If `ping` fails or the MCP tools are not available → **STOP. Do not continue.** Tell the user:
+
+> ❌ **Immich is not connected.** This plugin needs a running Immich MCP server to work.
+>
+> Run **/setup** to configure your Immich connection. You'll need:
+> 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
+> 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+> 3. The MCP server running (`./immich-mcp-server`)
+>
+> Nothing in this plugin will work until the connection is configured.
+
+**Do NOT skip this check. Do NOT try to run any other tool first. Always ping, always block if it fails.**
 
 Analyze Immich's face recognition data to generate a report on people in the library — who appears most, unnamed face clusters, co-occurrence patterns, and recognition quality.
 

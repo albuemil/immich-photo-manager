@@ -6,10 +6,28 @@ description: >
   Use when the user says "timeline gaps", "missing months", "missing photos", "are there gaps",
   "what months am I missing", "photo timeline", "coverage check", "find missing periods",
   "when am I missing photos", or any variation of wanting to find holes in their photo timeline.
-version: 0.1.0
+version: 1.0.0
 ---
 
 # Timeline Gaps
+
+## ⚠️ Connection Required — ALWAYS CHECK FIRST
+
+**Before doing ANYTHING else in this skill, call `ping` on the Immich MCP server.**
+
+- If `ping` succeeds → proceed with the skill normally.
+- If `ping` fails or the MCP tools are not available → **STOP. Do not continue.** Tell the user:
+
+> ❌ **Immich is not connected.** This plugin needs a running Immich MCP server to work.
+>
+> Run **/setup** to configure your Immich connection. You'll need:
+> 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
+> 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+> 3. The MCP server running (`./immich-mcp-server`)
+>
+> Nothing in this plugin will work until the connection is configured.
+
+**Do NOT skip this check. Do NOT try to run any other tool first. Always ping, always block if it fails.**
 
 Analyze the photo timeline month by month to detect gaps, anomalies, and coverage issues across import sources. Helps users discover missing imports, backup failures, or periods where photos only exist in one ecosystem.
 

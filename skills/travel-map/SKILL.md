@@ -8,10 +8,28 @@ description: >
   "map my photos", "where have I traveled", "GPS map", "location map",
   "map of my trips", "generate a map", "interactive map",
   or any variation of wanting to see their photos plotted on a map.
-version: 0.1.0
+version: 1.0.0
 ---
 
 # Travel Map
+
+## ⚠️ Connection Required — ALWAYS CHECK FIRST
+
+**Before doing ANYTHING else in this skill, call `ping` on the Immich MCP server.**
+
+- If `ping` succeeds → proceed with the skill normally.
+- If `ping` fails or the MCP tools are not available → **STOP. Do not continue.** Tell the user:
+
+> ❌ **Immich is not connected.** This plugin needs a running Immich MCP server to work.
+>
+> Run **/setup** to configure your Immich connection. You'll need:
+> 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
+> 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+> 3. The MCP server running (`./immich-mcp-server`)
+>
+> Nothing in this plugin will work until the connection is configured.
+
+**Do NOT skip this check. Do NOT try to run any other tool first. Always ping, always block if it fails.**
 
 Generate an interactive HTML map showing all locations where photos were taken. Clusters photos by geographic proximity, shows photo counts and date ranges per location, and optionally links to Immich albums.
 
