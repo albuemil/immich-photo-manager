@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 16 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 19 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
@@ -19,6 +19,7 @@ The Immich Photo Manager MCP server exposes 16 tools that Claude can use to inte
 | Tool | Description | Returns |
 |------|-------------|---------|
 | `get_asset_info` | Get full metadata for a specific asset | EXIF data, GPS, dates, dimensions, file info |
+| `get_asset_thumbnail` | Get base64-encoded thumbnail for a single asset | Base64 image data + MIME type |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
 
 ### Search
@@ -57,6 +58,7 @@ The Immich Photo Manager MCP server exposes 16 tools that Claude can use to inte
 |------|-------------|-----------|
 | `list_albums` | List all albums with asset counts | No |
 | `get_album` | Get album details including all asset IDs | No |
+| `get_album_thumbnails` | Get base64 thumbnails for assets in an album (batch) | No |
 | `create_album` | Create a new album with name and description | Yes |
 | `update_album` | Update album name or description | Yes |
 | `delete_album` | Delete an album (photos are NOT deleted) | Yes |
@@ -74,6 +76,29 @@ The Immich Photo Manager MCP server exposes 16 tools that Claude can use to inte
 ---
 
 ## Tool Details
+
+### `get_asset_thumbnail`
+
+```json
+{
+  "asset_id": "uuid-of-asset",
+  "size": "thumbnail"
+}
+```
+
+`size` accepts `"thumbnail"` (~250px, default) or `"preview"` (~1440px). Returns `{data, mime_type}` with base64-encoded image data. Used by the gallery HTML generator to embed thumbnails directly in self-contained HTML files.
+
+### `get_album_thumbnails`
+
+```json
+{
+  "album_id": "uuid-of-album",
+  "count": 20,
+  "offset": 0
+}
+```
+
+Batch version of `get_asset_thumbnail` — fetches thumbnails for all (or a subset of) assets in an album in a single call. Returns `{thumbnails: [{asset_id, data, mime_type}, ...], total_assets, immich_url}`. Set `count=0` (default) for all photos; use `count` + `offset` to paginate large albums. This is the primary tool for gallery HTML generation.
 
 ### `create_album`
 

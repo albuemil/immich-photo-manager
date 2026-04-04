@@ -214,7 +214,7 @@ User: "Show me photos from Lanzarote Verde"
 1. immich_list_albums() → find "Lanzarote Verde" album
 2. immich_get_album(album_id) → get asset list (273 photos)
 3. For first 20 assets: immich_get_asset_thumbnail(asset_id) → base64 thumbnails
-4. Read references/gallery-template.html
+4. Read assets/viewer-template.html
 5. Replace:
    - {{ALBUM_NAME}} → "Lanzarote Verde"
    - {{ALBUM_TOTAL}} → "273"
@@ -231,4 +231,5 @@ User: "Show me photos from Lanzarote Verde"
 ## Reference Files
 
 - `references/geographic-search-patterns.md` — GPS bounding boxes of common destinations and search strategies
+- `assets/index-template.html` — Dashboard template listing all saved gallery HTML files
 - `assets/viewer-template.html` — Self-contained HTML gallery template with dark/light themes, multiple view modes, slideshow, Cowork Actions Panel, and keyboard navigation
