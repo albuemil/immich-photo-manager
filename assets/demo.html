@@ -4,20 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=960">
 <title>immich-photo-manager Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f3ef;
-    --surface: #ffffff;
-    --surface2: #f0ede8;
-    --accent: #da7756;
-    --accent2: #b8612e;
-    --text: #1a1a1a;
-    --text-dim: #6b6560;
-    --text-tool: #2563eb;
-    --green: #16a34a;
-    --orange: #ea580c;
-    --radius: 12px;
-    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    /* Claude-ish palette */
+    --bg: #ece7df;
+    --surface: #faf8f5;
+    --surface2: #f0ebe4;
+    --accent: #c96442;
+    --accent2: #ae5535;
+    --accent-soft: rgba(201,100,66,0.08);
+    --text: #2d2b28;
+    --text-dim: #8a8279;
+    --text-tool: #7c5e3c;
+    --green: #3d8b5e;
+    --orange: #c97a3a;
+    --radius: 14px;
+    --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -34,77 +38,84 @@
   .container {
     width: 900px;
     background: var(--surface);
-    border-radius: 16px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 8px 40px rgba(45,35,20,0.10), 0 1px 3px rgba(45,35,20,0.06);
   }
 
+  /* ===== Header ===== */
   .header {
     background: var(--surface2);
     padding: 14px 24px;
     display: flex;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
+    border-bottom: 1px solid rgba(45,35,20,0.07);
   }
   .header-icon {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
+    width: 38px; height: 38px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f5f0ea, #e8e0d6);
+    box-shadow: 0 1px 4px rgba(45,35,20,0.10);
   }
-  .header-title { font-size: 15px; font-weight: 600; }
+  .header-icon img {
+    width: 34px; height: 34px;
+    object-fit: contain;
+  }
+  .header-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
   .header-badge {
-    font-size: 11px; padding: 2px 8px;
-    background: rgba(22,163,74,0.1);
-    color: var(--green); border-radius: 10px; font-weight: 500;
+    font-size: 11px; padding: 3px 10px;
+    background: rgba(61,139,94,0.10);
+    color: var(--green); border-radius: 12px; font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.6s ease;
   }
-  .header-right { margin-left: auto; font-size: 12px; color: var(--text-dim); }
+  .header-badge.visible { opacity: 1; }
+  .header-right {
+    margin-left: auto; font-size: 12px; color: var(--text-dim); font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .header-right.visible { opacity: 1; }
 
+  /* ===== Chat ===== */
   .chat {
     padding: 24px;
-    min-height: 520px;
+    min-height: 480px;
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
 
-  .msg {
-    max-width: 85%;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  .msg.visible { opacity: 1; transform: translateY(0); }
-  .msg.user { align-self: flex-end; }
-  .msg.assistant { align-self: flex-start; }
-
-  .msg-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; font-weight: 500; }
-  .msg.user .msg-label { text-align: right; }
+  .msg-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; letter-spacing: 0.02em; }
+  .msg-row.user .msg-label { text-align: right; }
 
   .msg-bubble {
     padding: 12px 16px;
     border-radius: var(--radius);
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
-  .msg.user .msg-bubble {
+  .msg-row.user .msg-bubble {
     background: var(--surface2);
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid rgba(45,35,20,0.06);
+    color: var(--text);
   }
-  .msg.assistant .msg-bubble {
+  .msg-row.assistant .msg-bubble {
     background: var(--surface);
-    border: 1px solid rgba(0,0,0,0.08);
+    border: 1px solid rgba(45,35,20,0.08);
   }
 
+  /* ===== Tool calls ===== */
   .tool-call {
-    background: rgba(37,99,235,0.04);
-    border: 1px solid rgba(37,99,235,0.12);
-    border-radius: 8px;
+    background: rgba(124,94,60,0.05);
+    border: 1px solid rgba(124,94,60,0.12);
+    border-radius: 10px;
     padding: 10px 14px;
     margin: 8px 0;
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
     font-size: 12px;
   }
   .tool-call-header {
@@ -114,26 +125,28 @@
     align-items: center;
     gap: 6px;
   }
-  .tool-call-header::before { content: '\26A1'; }
+  .tool-call-header::before { content: '⚡'; }
   .tool-call-params {
     color: var(--text-dim);
     margin-top: 4px;
     padding-left: 20px;
   }
 
-  .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin: 10px 0 4px;
+  /* ===== Success block ===== */
+  .success-block {
+    background: rgba(61,139,94,0.07);
+    border: 1px solid rgba(61,139,94,0.15);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-  .photo-thumb {
-    aspect-ratio: 1;
-    border-radius: 6px;
-    background-size: cover;
-    background-position: center;
-  }
+  .success-icon { font-size: 20px; }
+  .success-text { font-size: 13px; color: var(--green); font-weight: 600; }
 
+  /* ===== Scene separators ===== */
   .scene-sep {
     text-align: center;
     padding: 8px;
@@ -146,47 +159,325 @@
     color: var(--text-dim);
     background: var(--surface);
     padding: 4px 16px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    border: 1px solid rgba(45,35,20,0.06);
   }
 
-  .success-block {
-    background: rgba(22,163,74,0.06);
-    border: 1px solid rgba(22,163,74,0.15);
+  /* ===== Setup Card ===== */
+  .setup-card {
+    border: 1px solid rgba(45,35,20,0.10);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 10px 0;
+    background: var(--surface);
+  }
+  .setup-card-header {
+    background: var(--surface2);
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(45,35,20,0.06);
+  }
+  .setup-card-body { padding: 16px; }
+  .setup-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .setup-url-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(45,35,20,0.12);
+    border-radius: 10px;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface2);
+    outline: none;
+    min-height: 38px;
+  }
+  .setup-result {
+    margin-top: 12px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .setup-result.visible { opacity: 1; transform: translateY(0); }
+  .setup-stats {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    padding-left: 30px;
+    font-weight: 500;
+  }
+
+  /* ===== Gallery Preview ===== */
+  .gallery-preview {
+    border: 1px solid rgba(45,35,20,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 10px 0;
+    background: #1e1c19;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  .gallery-hero {
+    background: linear-gradient(135deg, #2c2825, #1e1c19);
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .gallery-hero h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ede8e0;
+    letter-spacing: -0.01em;
+  }
+  .gallery-hero p {
+    font-size: 12px;
+    color: #a09585;
+    margin-top: 4px;
+  }
+
+  /* Cowork actions bar */
+  .actions-bar-demo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(201,100,66,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .actions-label-demo {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .act-btn-demo {
+    font-size: 11px;
+    padding: 4px 10px;
     border-radius: 8px;
-    padding: 12px 14px;
-    margin: 8px 0;
+    border: 1px solid rgba(201,100,66,0.2);
+    background: rgba(201,100,66,0.08);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .act-btn-demo.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .select-badge {
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .select-badge.visible { opacity: 1; }
+
+  /* Photo grid */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    padding: 3px;
+  }
+  .gallery-thumb {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    cursor: pointer;
+  }
+  .gallery-thumb .check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .gallery-thumb .check.pop {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .gallery-thumb.selected {
+    outline: 2.5px solid var(--accent);
+    outline-offset: -2.5px;
+  }
+
+  /* Action panel */
+  .action-panel {
+    padding: 12px 16px;
+    background: rgba(30,28,25,0.96);
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .action-panel-title {
+    font-size: 11px;
+    color: #a09585;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid;
+    white-space: nowrap;
+    transition: box-shadow 0.35s ease, transform 0.25s ease;
+  }
+  .action-btn.glow {
+    box-shadow: 0 0 16px rgba(201,100,66,0.6), 0 0 6px rgba(201,100,66,0.35);
+    transform: scale(1.10);
+    z-index: 2;
+  }
+  /* Claude-ish warm tones for action buttons */
+  .action-btn.c1  { background: rgba(201,100,66,.08); color: #c96442; border-color: rgba(201,100,66,.2); }
+  .action-btn.c2  { background: rgba(61,139,94,.08);  color: #3d8b5e; border-color: rgba(61,139,94,.18); }
+  .action-btn.c3  { background: rgba(160,110,60,.08); color: #9a6a30; border-color: rgba(160,110,60,.18); }
+  .action-btn.c4  { background: rgba(140,95,65,.08);  color: #8a5f3e; border-color: rgba(140,95,65,.18); }
+  .action-btn.c5  { background: rgba(120,100,80,.08); color: #7a6445; border-color: rgba(120,100,80,.18); }
+  .action-btn.c6  { background: rgba(180,145,50,.08); color: #a08520; border-color: rgba(180,145,50,.18); }
+  .action-btn.c7  { background: rgba(90,120,140,.08); color: #50758a; border-color: rgba(90,120,140,.18); }
+  .action-btn.c8  { background: rgba(175,85,100,.08); color: #a04858; border-color: rgba(175,85,100,.18); }
+  .action-btn.c9  { background: rgba(190,130,40,.08); color: #b07a18; border-color: rgba(190,130,40,.2); }
+  .action-btn.c10 { background: rgba(180,65,55,.07);  color: #a83828; border-color: rgba(180,65,55,.18); }
+
+  /* Toast */
+  .gallery-toast {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(45,40,35,0.94);
+    color: #fff;
+    padding: 12px 18px;
     display: flex;
     align-items: center;
     gap: 10px;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    border-top: 2px solid var(--accent);
   }
-  .success-icon { font-size: 20px; }
-  .success-text { font-size: 13px; color: var(--green); font-weight: 500; }
+  .gallery-toast.show { transform: translateY(0); }
+  .gallery-toast-icon { font-size: 18px; }
+  .gallery-toast-text { font-size: 13px; font-weight: 700; }
+  .gallery-toast-sub {
+    font-size: 10px; opacity: 0.7;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+    margin-top: 2px;
+  }
 
-  .cleanup-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 10px 0;
+  /* ===== Polaroid album cards ===== */
+  .polaroid-row {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0 6px;
+    justify-content: center;
   }
-  .cleanup-card {
-    background: var(--surface);
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 8px;
-    padding: 10px;
+  .polaroid {
+    position: relative;
+    display: inline-block;
+    background: #fff;
+    padding: 6px 6px 24px;
+    border-radius: 3px;
+    box-shadow: 0 4px 15px rgba(45,35,20,0.12);
+    width: 110px;
+    transform: rotate(-2deg);
+  }
+  .polaroid:nth-child(2) { transform: rotate(1.5deg); }
+  .polaroid:nth-child(3) { transform: rotate(-1deg); }
+  .polaroid::before, .polaroid::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #fff;
+    border-radius: 3px;
+    box-shadow: 0 4px 15px rgba(45,35,20,0.08);
+    z-index: -1;
+  }
+  .polaroid::before { transform: rotate(3deg) translate(3px, 2px); }
+  .polaroid::after { transform: rotate(-2.5deg) translate(-2px, 2px); opacity: 0.7; }
+  .polaroid-img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background-size: cover;
+    background-position: center;
+  }
+  .polaroid-label {
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+    color: #4a4540;
     text-align: center;
+    margin-top: 4px;
+    font-weight: 500;
   }
-  .cleanup-card .emoji { font-size: 20px; }
-  .cleanup-card .val { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
-  .cleanup-card .lbl {
-    font-size: 10px; color: var(--text-dim);
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .cleanup-card.screenshots .val { color: var(--orange); }
-  .cleanup-card.duplicates .val { color: var(--accent); }
-  .cleanup-card.reclaimable .val { color: var(--green); }
 
-  .progress-bar { height: 3px; background: rgba(0,0,0,0.06); }
+  /* ===== File link ===== */
+  .file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(201,100,66,0.2);
+    border-radius: 10px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .file-link::before { content: '📄'; }
+
+  /* Placeholder photo gradients — warm tones */
+  .p1 { background: linear-gradient(135deg, #8a5a3a, #c9845a, #e8c87a); }
+  .p2 { background: linear-gradient(155deg, #3a6a4a, #5a9a6a, #c8d88a); }
+  .p3 { background: linear-gradient(145deg, #5a4a3a, #b8945a, #dab86a); }
+  .p4 { background: linear-gradient(120deg, #4a3a5a, #8a6a9a, #d8a8b8); }
+  .p5 { background: linear-gradient(130deg, #3a5a6a, #5a8a9a, #a8c8d8); }
+  .p6 { background: linear-gradient(160deg, #6a5a3a, #b8a85a, #e8d88a); }
+  .p7 { background: linear-gradient(140deg, #4a5a3a, #7a9a5a, #b8d87a); }
+  .p8 { background: linear-gradient(125deg, #5a3a3a, #9a6a5a, #d8a88a); }
+
+  /* ===== Progress bar ===== */
+  .progress-bar { height: 3px; background: rgba(45,35,20,0.06); }
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
@@ -198,156 +489,345 @@
     padding: 10px;
     font-size: 11px;
     color: var(--text-dim);
-    opacity: 0.5;
+    opacity: 0.45;
+    font-weight: 500;
   }
 
-  .p-mexico1 { background: linear-gradient(135deg, #1a5276, #d4ac0d, #e67e22); }
-  .p-mexico2 { background: linear-gradient(160deg, #0e6655, #1abc9c, #f39c12); }
-  .p-mexico3 { background: linear-gradient(145deg, #2471a3, #5dade2, #f5b041); }
-  .p-mexico4 { background: linear-gradient(120deg, #1b4f72, #2e86c1, #e74c3c); }
-  .p-mexico5 { background: linear-gradient(155deg, #0b5345, #27ae60, #f4d03f); }
-  .p-mexico6 { background: linear-gradient(130deg, #154360, #3498db, #e67e22); }
-  .p-mexico7 { background: linear-gradient(140deg, #1a5276, #45b39d, #f39c12); }
-  .p-mexico8 { background: linear-gradient(125deg, #0e6251, #1abc9c, #d35400); }
+  /* ===== Avatars ===== */
+  .msg-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    max-width: 85%;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .msg-row.visible { opacity: 1; transform: translateY(0); }
+  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-row.assistant { align-self: flex-start; }
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 18px;
+  }
+  .avatar-claude {
+    background: linear-gradient(145deg, #d4a574, #b87a52);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(180,110,70,0.3);
+  }
+  .avatar-claude svg { width: 16px; height: 16px; fill: #fff; }
+  .avatar-user {
+    background: linear-gradient(145deg, #8a9a7a, #6a8a6a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(90,120,80,0.3);
+  }
+  .avatar-user svg { width: 16px; height: 16px; fill: #fff; }
+  .msg-content { flex: 1; min-width: 0; }
+
+  /* Typing cursor */
+  @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+  .cursor {
+    display: inline-block;
+    width: 1.5px;
+    height: 15px;
+    background: var(--accent);
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    animation: blink 0.7s infinite;
+  }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div class="header-icon">📸</div>
+    <div class="header-icon"><img src="data:image/png;base64,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" style="width:28px;height:28px;border-radius:8px"></div>
     <div class="header-title">immich-photo-manager</div>
-    <div class="header-badge">MCP Connected</div>
-    <div class="header-right">39,596 photos · 4,983 videos</div>
+    <div class="header-badge" id="hdr-badge">MCP Connected</div>
+    <div class="header-right" id="hdr-stats">24,819 photos · 2,340 videos · 19 tools</div>
   </div>
 
   <div class="chat" id="chat">
-    <div class="msg user" id="s1-user">
-      <div class="msg-label">You</div>
-      <div class="msg-bubble">Find my photos from Mexico</div>
+
+    <!-- Scene 1: Setup / Connection -->
+    <div class="msg-row user" id="s1-user">
+      <div class="avatar avatar-user"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">You</div>
+        <div class="msg-bubble"><code style="background:rgba(201,100,66,0.08);padding:2px 8px;border-radius:6px;font-size:13px;color:var(--accent);font-weight:600">/setup</code></div>
+      </div>
     </div>
-    <div class="msg assistant" id="s1-tool">
-      <div class="msg-label">Claude</div>
-      <div class="msg-bubble">
-        <div class="tool-call">
-          <div class="tool-call-header">search_metadata</div>
-          <div class="tool-call-params">country: "Mexico" · type: IMAGE</div>
-        </div>
-        Found <strong>10 photos</strong> from Mexico, taken in September 2021:
-        <div class="photo-grid">
-          <div class="photo-thumb p-mexico1"></div>
-          <div class="photo-thumb p-mexico2"></div>
-          <div class="photo-thumb p-mexico3"></div>
-          <div class="photo-thumb p-mexico4"></div>
-          <div class="photo-thumb p-mexico5"></div>
-          <div class="photo-thumb p-mexico6"></div>
-          <div class="photo-thumb p-mexico7"></div>
-          <div class="photo-thumb p-mexico8"></div>
+    <div class="msg-row assistant" id="s1-card">
+      <div class="avatar avatar-claude"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">Claude</div>
+        <div class="msg-bubble">
+          Let's connect to your Immich server.
+          <div class="setup-card">
+          <div class="setup-card-header">🔗 Connect to Immich</div>
+          <div class="setup-card-body">
+            <div class="setup-field-label">Server URL</div>
+            <div class="setup-url-input" id="url-input"><span id="url-text"></span><span class="cursor" id="url-cursor"></span></div>
+            <div class="setup-result" id="setup-result">
+              <div class="tool-call" style="margin:0">
+                <div class="tool-call-header">ping</div>
+              </div>
+              <div class="success-block" style="margin-top:8px">
+                <div class="success-icon">✅</div>
+                <div class="success-text">Connected · Immich v2.6.2</div>
+              </div>
+              <div class="setup-stats">24,819 photos · 2,340 videos · 87 albums</div>
+            </div>
+          </div>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Scene 2: Gallery + Selection + Action -->
     <div class="scene-sep" id="s2-sep"><span>· · ·</span></div>
-    <div class="msg user" id="s2-user">
-      <div class="msg-label">You</div>
-      <div class="msg-bubble">Create an album called "Mexico 2021" with those photos</div>
+    <div class="msg-row user" id="s2-user">
+      <div class="avatar avatar-user"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">You</div>
+        <div class="msg-bubble">Show me my Barcelona photos</div>
+      </div>
     </div>
-    <div class="msg assistant" id="s2-tool">
-      <div class="msg-label">Claude</div>
-      <div class="msg-bubble">
+    <div class="msg-row assistant" id="s2-gallery">
+      <div class="avatar avatar-claude"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">Claude</div>
+        <div class="msg-bubble">
+          <div class="tool-call">
+            <div class="tool-call-header">search_smart</div>
+            <div class="tool-call-params">query: "Barcelona"</div>
+          </div>
         <div class="tool-call">
-          <div class="tool-call-header">create_album</div>
-          <div class="tool-call-params">name: "Mexico 2021"</div>
+          <div class="tool-call-header">get_album_thumbnails</div>
+          <div class="tool-call-params">album: "Barcelona — Barceloneta" · count: 20</div>
         </div>
-        <div class="tool-call">
-          <div class="tool-call-header">add_assets_to_album</div>
-          <div class="tool-call-params">album: "Mexico 2021" · assets: 10 photos</div>
+        Generated your gallery with 20 thumbnails from 1,273 total photos:
+
+        <div class="gallery-preview" id="gallery">
+          <div class="gallery-hero">
+            <h3>🏖️ Barcelona — Barceloneta / Playa</h3>
+            <p>847 photos · Showing 20</p>
+          </div>
+          <div class="actions-bar-demo">
+            <span class="actions-label-demo">Cowork</span>
+            <span class="act-btn-demo active">Select</span>
+            <span class="act-btn-demo">Copy IDs</span>
+            <span class="select-badge" id="select-badge">3 selected</span>
+          </div>
+          <div class="gallery-grid">
+            <div class="gallery-thumb p1" id="thumb-0"><div class="check">✓</div></div>
+            <div class="gallery-thumb p2" id="thumb-1"><div class="check">✓</div></div>
+            <div class="gallery-thumb p3" id="thumb-2"><div class="check">✓</div></div>
+            <div class="gallery-thumb p4" id="thumb-3"><div class="check">✓</div></div>
+            <div class="gallery-thumb p5" id="thumb-4"><div class="check">✓</div></div>
+            <div class="gallery-thumb p6" id="thumb-5"><div class="check">✓</div></div>
+            <div class="gallery-thumb p7" id="thumb-6"><div class="check">✓</div></div>
+            <div class="gallery-thumb p8" id="thumb-7"><div class="check">✓</div></div>
+          </div>
+          <div class="action-panel" id="action-panel">
+            <div class="action-panel-title" id="panel-title">Select photos to use actions</div>
+            <div class="action-grid">
+              <span class="action-btn c1">📋 Copy IDs</span>
+              <span class="action-btn c2">➕ Create Album</span>
+              <span class="action-btn c3" id="btn-add-album">📂 Move to Album</span>
+              <span class="action-btn c4">🔍 Get EXIF</span>
+              <span class="action-btn c5">🔎 Find Similar</span>
+              <span class="action-btn c6">⭐ Set Cover</span>
+              <span class="action-btn c7">⬇️ Download</span>
+              <span class="action-btn c8">❤️ Add to Favs</span>
+              <span class="action-btn c9">⚠️ Remove</span>
+              <span class="action-btn c10">🗑️ Delete</span>
+            </div>
+          </div>
+          <!-- Toast -->
+          <div class="gallery-toast" id="toast">
+            <div class="gallery-toast-icon">📂</div>
+            <div>
+              <div class="gallery-toast-text">Copied to Cowork chat</div>
+              <div class="gallery-toast-sub">Move these 3 photos to album "Favorites": a1b2c3, d4e5f6, g7h8i9</div>
+            </div>
+          </div>
         </div>
-        <div class="success-block">
-          <div class="success-icon">✅</div>
-          <div class="success-text">Album "Mexico 2021" created with 10 photos</div>
+
+          <div class="file-link">barcelona.html — open in browser</div>
         </div>
       </div>
     </div>
 
+    <!-- Scene 3: Geographic Albums -->
     <div class="scene-sep" id="s3-sep"><span>· · ·</span></div>
-    <div class="msg user" id="s3-user">
-      <div class="msg-label">You</div>
-      <div class="msg-bubble">Scan my library for screenshots and duplicates</div>
+    <div class="msg-row user" id="s3-user">
+      <div class="avatar avatar-user"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">You</div>
+        <div class="msg-bubble">Create albums for all my trips</div>
+      </div>
     </div>
-    <div class="msg assistant" id="s3-tool">
-      <div class="msg-label">Claude</div>
-      <div class="msg-bubble">
+    <div class="msg-row assistant" id="s3-result">
+      <div class="avatar avatar-claude"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg></div>
+      <div class="msg-content">
+        <div class="msg-label">Claude</div>
+        <div class="msg-bubble">
         <div class="tool-call">
-          <div class="tool-call-header">search_metadata</div>
-          <div class="tool-call-params">type: IMAGE · model: screenshot detection</div>
+          <div class="tool-call-header">get_map_markers</div>
+          <div class="tool-call-params">scanning 18,406 geotagged photos...</div>
         </div>
-        <div class="tool-call">
-          <div class="tool-call-header">search_smart</div>
-          <div class="tool-call-params">query: "screenshot" · full library scan</div>
+        Found <strong>63 destinations</strong> across 14 countries. Created all albums:
+
+        <div class="polaroid-row">
+          <div class="polaroid">
+            <div class="polaroid-img p1"></div>
+            <div class="polaroid-label">🇮🇹 Roma & Vaticano</div>
+          </div>
+          <div class="polaroid">
+            <div class="polaroid-img p3"></div>
+            <div class="polaroid-label">🇪🇬 Cairo & Giza</div>
+          </div>
+          <div class="polaroid">
+            <div class="polaroid-img p5"></div>
+            <div class="polaroid-label">🇲🇽 Oaxaca</div>
+          </div>
         </div>
-        Library cleanup scan complete:
-        <div class="cleanup-grid">
-          <div class="cleanup-card screenshots">
-            <div class="emoji">📱</div>
-            <div class="val">1,247</div>
-            <div class="lbl">Screenshots</div>
-          </div>
-          <div class="cleanup-card duplicates">
-            <div class="emoji">🔄</div>
-            <div class="val">389</div>
-            <div class="lbl">Duplicates</div>
-          </div>
-          <div class="cleanup-card reclaimable">
-            <div class="emoji">💾</div>
-            <div class="val">3.2 GB</div>
-            <div class="lbl">Reclaimable</div>
+
+          <div class="success-block">
+            <div class="success-icon">✅</div>
+            <div class="success-text">63 albums created · 18,406 photos organized</div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-  <div class="watermark">📸🧹🗺️ immich-photo-manager · drolosoft.com</div>
+  <div class="watermark">📸🧹🗺️ immich-photo-manager v1.0.0 · drolosoft.com</div>
 </div>
 
 <script>
-  const sequence = [
-    { id: 's1-user', delay: 500 },
-    { id: 's1-tool', delay: 1200 },
-    { id: 's2-sep', delay: 800 },
-    { id: 's2-user', delay: 600 },
-    { id: 's2-tool', delay: 1200 },
-    { id: 's3-sep', delay: 800 },
-    { id: 's3-user', delay: 600 },
-    { id: 's3-tool', delay: 1600 },
-  ];
-
-  const totalDuration = sequence.reduce((sum, s) => sum + s.delay, 0);
-  let elapsed = 0;
-
-  function play() {
-    const progress = document.getElementById('progress');
-    let cumDelay = 0;
-
-    sequence.forEach(step => {
-      cumDelay += step.delay;
-      const d = cumDelay;
-      setTimeout(() => {
-        elapsed = d;
-        progress.style.width = ((elapsed / totalDuration) * 100) + '%';
-        const el = document.getElementById(step.id);
-        if (el) {
-          el.classList.add('visible');
-          el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-      }, d);
-    });
-
-    setTimeout(() => { progress.style.width = '100%'; }, cumDelay + 2000);
+  // ===== URL typing animation =====
+  const URL_TEXT = 'http://192.168.1.100:2283';
+  let urlIdx = 0;
+  function typeUrl(cb) {
+    const el = document.getElementById('url-text');
+    function tick() {
+      if (urlIdx < URL_TEXT.length) {
+        urlIdx++;
+        el.textContent = URL_TEXT.slice(0, urlIdx);
+        setTimeout(tick, 35 + Math.random() * 25);
+      } else {
+        document.getElementById('url-cursor').style.display = 'none';
+        if (cb) cb();
+      }
+    }
+    tick();
   }
 
-  window.addEventListener('load', () => setTimeout(play, 800));
+  // ===== Selection animation =====
+  const SELECT_INDICES = [0, 3, 5];
+  function selectPhoto(idx) {
+    const thumb = document.getElementById('thumb-' + idx);
+    thumb.classList.add('selected');
+    const chk = thumb.querySelector('.check');
+    chk.classList.add('pop');
+  }
+
+  // ===== Show helper =====
+  function show(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('visible');
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }
+
+  // ===== Main sequence =====
+  const progress = document.getElementById('progress');
+  const TOTAL = 17000;
+
+  function setProgress(ms) {
+    progress.style.width = Math.min((ms / TOTAL) * 100, 100) + '%';
+  }
+
+  function play() {
+    let t = 0;
+    function at(delay, fn) {
+      t += delay;
+      const d = t;
+      setTimeout(() => { setProgress(d); fn(); }, d);
+    }
+
+    // Scene 1: Setup
+    at(600, () => show('s1-user'));
+    at(1200, () => {
+      show('s1-card');
+      // Start typing URL after card appears
+      setTimeout(() => {
+        typeUrl(() => {
+          // After typing finishes, show ping + connected
+          setTimeout(() => {
+            document.getElementById('setup-result').classList.add('visible');
+            setTimeout(() => {
+              document.getElementById('hdr-badge').classList.add('visible');
+              document.getElementById('hdr-stats').classList.add('visible');
+            }, 400);
+          }, 300);
+        });
+      }, 300);
+    });
+
+    // Scene 2: Gallery — give enough time for URL typing (~1.5s) + result (~0.7s)
+    at(3500, () => show('s2-sep'));
+    at(600, () => show('s2-user'));
+    at(1800, () => show('s2-gallery'));
+
+    // Selection animation — generous delays so it's clearly visible
+    at(1800, () => {
+      selectPhoto(SELECT_INDICES[0]);
+    });
+    at(500, () => {
+      selectPhoto(SELECT_INDICES[1]);
+    });
+    at(500, () => {
+      selectPhoto(SELECT_INDICES[2]);
+      document.getElementById('select-badge').classList.add('visible');
+      document.getElementById('panel-title').textContent = '3 photos selected — click to copy command';
+    });
+
+    // Glow "Add to Album" button
+    at(900, () => {
+      document.getElementById('btn-add-album').classList.add('glow');
+    });
+
+    // Toast slides up
+    at(700, () => {
+      document.getElementById('toast').classList.add('show');
+    });
+
+    // Scene 3: Albums
+    at(1800, () => {
+      document.getElementById('toast').classList.remove('show');
+      document.getElementById('btn-add-album').classList.remove('glow');
+      show('s3-sep');
+    });
+    at(600, () => show('s3-user'));
+    at(1800, () => show('s3-result'));
+
+    // End
+    at(1500, () => setProgress(TOTAL));
+  }
+
+  window.addEventListener('load', () => setTimeout(play, 400));
 </script>
 </body>
 </html>
