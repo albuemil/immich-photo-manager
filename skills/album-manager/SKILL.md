@@ -6,7 +6,8 @@ description: >
   "make a gallery album", "curate photos from Italy", "publish album",
   "geographic albums", "album from my trip to X", "share this album",
   or any variation of creating, managing, or publishing photo albums in Immich.
-  Also triggers on "what albums do I have", "list albums", "album stats".
+  Also triggers on "what albums do I have", "list albums", "album stats",
+  "show me photos from", "generate gallery for", "show me the album".
 version: 0.2.0
 ---
 
@@ -32,6 +33,7 @@ Use the Immich MCP tools for all API interactions:
 - `immich_create_shared_link` — Create a public shared link for an album (makes it visible in Gallery)
 - `immich_get_asset_info` — Get full metadata for a specific asset (GPS, EXIF, dates)
 - `immich_get_statistics` — Get library statistics (total photos, videos, storage)
+- `immich_get_asset_thumbnail` — Get base64 thumbnail for an asset (used for gallery HTML generation)
 
 ## Album Creation Workflow
 
@@ -133,85 +135,100 @@ When asked to update or refine an existing album:
 3. Present additions and potential removals to the user
 4. Apply changes after approval
 
-## Thumbnail Display
+---
 
-**ALWAYS show visual thumbnails** when presenting album contents or creation results. Never list asset IDs as plain text — users need to *see* their photos.
+## Gallery HTML Generation
 
-### How it works — the HTML pipeline
+When the user asks to **"show me photos from [album]"**, **"generate a gallery for [album]"**, **"show me [album name]"**, or any variation of viewing/displaying album contents visually, generate an interactive HTML gallery page.
 
-Thumbnail data (base64-encoded WebP) is too large for the context window. **This is expected and by design.** Cowork automatically saves large MCP responses to a temp file. The pipeline is:
+### Template
 
-1. Call `get_album_thumbnails` → Cowork saves the response to a temp file (the "overflow")
-2. The overflow message contains the file path — extract it
-3. Use Python to read the temp file and build an HTML viewer
-4. Write the HTML to the user's Documents folder
-5. Share via `computer://` link — user opens in their browser
+Use the gallery template at `assets/viewer-template.html` (from the plugin root). This is a self-contained, single-file HTML gallery with:
 
-**This costs only ~580 tokens per request**, regardless of how many photos. The base64 data never enters the context window.
+- **Dark/light theme** (system-aware, toggleable)
+- **4 view modes**: detail grid, icon grid, list, masonry
+- **Full-screen gallery overlay** with keyboard navigation (arrows, Escape, Space for slideshow)
+- **Touch/swipe gestures** for mobile
+- **Lazy loading** with intersection observers
+- **Infinite scroll** with "Load more" button
+- **Slideshow mode** with progress bar
+- **Polaroid-style album cards** linking back to Immich
+- **Responsive design** for all screen sizes
 
-### Step-by-step
+### Placeholder Reference
 
-**1. Fetch thumbnails:**
-```
-get_album_thumbnails(album_id="uuid-here")             # ALL photos (default)
-get_album_thumbnails(album_id="uuid-here", count=12)   # First 12 photos
-get_album_thumbnails(album_id="uuid-here", count=12, offset=24)  # Photos 25-36
-```
+The template uses these placeholders that MUST be replaced:
 
-**2. Build HTML from the saved temp file:**
-```python
-import json
+| Placeholder | Description | Example |
+|---|---|---|
+| `{{ALBUM_NAME}}` | Display name of the album | `Lanzarote Verde` |
+| `{{ALBUM_TOTAL}}` | Total number of photos in the album | `273` |
+| `{{SEARCH_QUERY}}` | The query or description used to find photos | `&ldquo;green landscapes in Lanzarote&rdquo;` |
+| `{{IMMICH_URL}}` | Immich server base URL | `https://fotos.txeo.club` |
+| `{{PAGE_SIZE}}` | Number of photos per lazy-load page | `6` |
+| `{{PHOTO_COUNT}}` | Number of photos included in the HTML (may be less than ALBUM_TOTAL for performance) | `20` |
+| `{{PHOTO_ENTRIES}}` | The photo data entries (see format below) | See below |
+| `{{ALBUMS_JSON}}` | JSON array of album links | See below |
 
-with open('<OVERFLOW_FILE_PATH>') as f:
-    raw = json.loads(f.read())
+### Photo Entry Format
 
-for item in raw:
-    if item.get('type') == 'text':
-        data = json.loads(item['text'])
-        break
+Each photo entry in `{{PHOTO_ENTRIES}}` is a JS object:
 
-album_name = data['album_name']
-total_assets = data['total_assets']   # Full album count
-immich_url = data['immich_url']       # For linking to Immich
-thumbs = data['thumbnails']           # [{asset_id, data, mime_type}, ...]
-
-# Build HTML with embedded base64 images
-# Each image should link to: {immich_url}/photos/{asset_id}
-# Header: album name + "Showing N of M photos"
-# Footer: link to full album at {immich_url}/albums/{album_id}
+```javascript
+{id:"<asset-id>",src:"data:image/webp;base64,<thumbnail-base64>",date:"<ISO-date>"}
 ```
 
-**3. Share the result:**
+- `id`: The Immich asset ID (used for linking to the full photo in Immich)
+- `src`: Base64-encoded WebP thumbnail from `immich_get_asset_thumbnail`
+- `date`: ISO date string from the asset metadata (optional, used in list view)
+
+Entries are comma-separated, one per line.
+
+### Albums JSON Format
+
+```javascript
+{id:"<album-id>",name:"<Album Name>",total:<count>}
 ```
-[View album](computer:///sessions/.../mnt/Documents/album-name.html)
+
+### Generation Workflow
+
+1. **Get album data**: Call `immich_get_album` to get the album ID, name, and asset list
+2. **Get thumbnails**: For each asset (up to a reasonable batch, e.g. 20-50), call `immich_get_asset_thumbnail` to get base64 thumbnails
+3. **Read the template**: Read `assets/viewer-template.html` from the plugin root
+4. **Replace placeholders**: Fill in all `{{...}}` placeholders with actual data
+5. **Write the HTML**: Save to the outputs directory as `<album-name-slug>.html`
+6. **Present to user**: Share the file link
+
+### Performance Notes
+
+- **PAGE_SIZE**: Keep at 6 for initial load, the rest lazy-loads
+- **PHOTO_COUNT (TOTAL)**: This is the number of photos embedded in the HTML. Keep reasonable (20-50) for file size. The gallery shows `ALBUM_TOTAL` as the full count but only embeds `TOTAL` thumbnails.
+- **Thumbnails**: Use the smallest available thumbnail size. Base64 WebP is preferred.
+- For very large albums (100+), embed only the first 20-50 photos. The gallery's "Load more" button will show them progressively.
+
+### Example: Generating a gallery
+
 ```
+User: "Show me photos from Lanzarote Verde"
 
-### MCP response fields
-The `get_album_thumbnails` response includes:
-- `album_id` — Album UUID
-- `album_name` — Album display name
-- `total_assets` — Total photos in the album (not just the fetched count)
-- `count` — Number of thumbnails actually returned
-- `offset` — Starting offset used
-- `immich_url` — Base URL for building links to photos and albums
-- `thumbnails[]` — Array of `{asset_id, data, mime_type}`
-
-### HTML viewer features
-The generated HTML should include:
-- **Sticky header** with album name and "Showing N of M photos"
-- **Paginated grid** — show 6-12 at a time, infinite scroll for more
-- **Skeleton placeholders** with shimmer animation while images load
-- **Clickable photos** — each links to `{immich_url}/photos/{asset_id}`
-- **Back-to-top** floating button
-- **Footer** with count of remaining photos + link to full album in Immich
-- Dark theme with the immich-photo-manager brand (accent: #da7756)
-
-### Guidelines
-- Default to **ALL photos** for small albums (≤50 photos)
-- Use `count=20` for large albums, offer "Load more" or pagination
-- Every photo MUST link to its Immich entity: `{immich_url}/photos/{asset_id}`
-- After showing thumbnails, offer next actions: "Want to see more?", "Add more photos?", "Remove any of these?"
+1. immich_list_albums() → find "Lanzarote Verde" album
+2. immich_get_album(album_id) → get asset list (273 photos)
+3. For first 20 assets: immich_get_asset_thumbnail(asset_id) → base64 thumbnails
+4. Read references/gallery-template.html
+5. Replace:
+   - {{ALBUM_NAME}} → "Lanzarote Verde"
+   - {{ALBUM_TOTAL}} → "273"
+   - {{SEARCH_QUERY}} → "&ldquo;show me photos from Lanzarote Verde&rdquo;"
+   - {{IMMICH_URL}} → "https://fotos.txeo.club"
+   - {{PAGE_SIZE}} → "6"
+   - {{PHOTO_COUNT}} → "20"
+   - {{PHOTO_ENTRIES}} → actual photo entries
+   - {{ALBUMS_JSON}} → {id:"...",name:"Lanzarote Verde",total:273}
+6. Save as lanzarote-verde.html
+7. Present link to user
+```
 
 ## Reference Files
 
-See `references/geographic-search-patterns.md` for GPS bounding boxes of common destinations and search strategies.
+- `references/geographic-search-patterns.md` — GPS bounding boxes of common destinations and search strategies
+- `assets/viewer-template.html` — Self-contained HTML gallery template with dark/light themes, multiple view modes, slideshow, Cowork Actions Panel, and keyboard navigation

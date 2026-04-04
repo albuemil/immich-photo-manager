@@ -89,13 +89,20 @@ For bulk results, prefer `get_album_thumbnails` if the photos are already in an 
 
 ### HTML viewer standard
 
-Generated HTML should include:
-- **Sticky header** with title + "Showing N of M photos"
-- **Paginated grid** with skeleton placeholders and infinite scroll
-- **Clickable photos** linking to `{immich_url}/photos/{asset_id}`
-- **Back-to-top** button
-- **Footer** with remaining count + link to full album in Immich
-- Dark theme, accent color #da7756
+**IMPORTANT: Use the canonical template at `assets/viewer-template.html`.**
+Read the template file, replace `{{PLACEHOLDERS}}` with actual data, and write the result.
+See `skills/album-manager/references/viewer-template-spec.md` for the full placeholder list.
+
+The template includes:
+- **🗾 header** with icon scroll-shrink (38px→26px) + shadow effect
+- **5 view modes**: Detail, Icon, List, Masonry, Gallery
+- **3 themes**: Light (warm parchment), System, Dark (warm espresso)
+- **Gallery overlay** with keyboard nav, swipe, slideshow
+- **Cowork Actions Panel** — floating toolbar for web↔chat interactivity
+- **Related Albums** section with polaroid cards
+
+**After generating a viewer, also update the index dashboard** (`index.html`)
+by rebuilding it from `assets/index-template.html`. See viewer-template-spec.md.
 
 ### Guidelines
 - Show **all photos** for small sets (≤50), use `count=20` + pagination for larger sets
