@@ -16,7 +16,7 @@
       },
       "source": {
         "source": "url",
-        "url": "https://github.com/drolosoft/immich-photo-manager.git"
+        "url": "file:///Users/txeo/immich-photo-manager/.git"
       },
       "homepage": "https://drolosoft.com/immich-photo-manager.html"
     }
