@@ -23,9 +23,35 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 
 - A running [Immich](https://immich.app) instance (self-hosted, v1.90+)
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
-- Go 1.24+ (to build the MCP server)
 
-### Build & Run
+### Option A: Install as Claude Plugin (recommended)
+
+**In Claude Code CLI:**
+
+```sh
+/plugin marketplace add drolosoft/immich-photo-manager
+/plugin install immich-photo-manager@drolosoft/immich-photo-manager
+```
+
+**For local testing (development):**
+
+```sh
+git clone https://github.com/drolosoft/immich-photo-manager.git
+claude --plugin-dir ./immich-photo-manager
+```
+
+After installing, configure your Immich credentials in `.env` at the plugin directory:
+
+```sh
+IMMICH_BASE_URL=http://your-immich-server:2283
+IMMICH_API_KEY=your-api-key-here
+```
+
+That's it. Open Claude and say **"how healthy is my photo library?"** to get started.
+
+### Option B: Manual MCP Server Setup
+
+If you prefer to run the MCP server independently (requires Go 1.24+):
 
 ```sh
 git clone https://github.com/drolosoft/immich-photo-manager.git
@@ -41,9 +67,7 @@ export IMMICH_API_KEY="your-api-key-here"
 
 The server starts on port `8626` by default (override with `MCP_PORT` env var).
 
-### Configure Claude
-
-Add to your `.mcp.json`:
+Then add to your `.mcp.json`:
 
 ```json
 {
@@ -54,8 +78,6 @@ Add to your `.mcp.json`:
   }
 }
 ```
-
-That's it. Open Claude and say "how healthy is my photo library?" to get started.
 
 ---
 

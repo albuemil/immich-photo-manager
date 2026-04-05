@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    {
+      "name": "immich-photo-manager",
+      "version": "1.0.0",
+      "description": "MCP server for intelligent photo management with Immich — interactive HTML galleries, geographic album curation, library cleanup, duplicate detection, and 19 MCP tools",
+      "author": "Drolosoft",
+      "homepage": "https://drolosoft.com/immich-photo-manager.html",
+      "repository": "https://github.com/drolosoft/immich-photo-manager",
+      "source": {
+        "source": "github",
+        "repo": "drolosoft/immich-photo-manager"
+      }
+    }
+  ]
+}
