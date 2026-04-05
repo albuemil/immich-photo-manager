@@ -24,46 +24,25 @@ echo "📦 Building ${OUTPUT}..."
 # Clean previous builds
 rm -f "${PLUGIN_NAME}"*.plugin
 
-# Build the Go MCP server binary (if Go is available)
-if command -v go &>/dev/null; then
-  echo "🔨 Compiling MCP server..."
-  go build -o immich-mcp-server .
-  echo "   ✅ immich-mcp-server built ($(du -h immich-mcp-server | cut -f1))"
-else
-  if [[ -f immich-mcp-server ]]; then
-    echo "⚠️  Go not found — using existing immich-mcp-server binary"
-  else
-    echo "❌ Go not found and no pre-built binary exists. Install Go 1.24+ first."
-    exit 1
-  fi
-fi
-
 # Create the .plugin zip
-# Include everything the plugin needs, exclude dev/build artifacts
+# Include only what plugin users need — no Go binary, no dev scripts, no demo assets
 zip -r "$OUTPUT" \
   .claude-plugin/ \
-  assets/ \
+  assets/icon.png \
+  assets/index-template.html \
+  assets/viewer-template.html \
   commands/ \
   deploy/ \
   doc/ \
-  scripts/ \
   skills/ \
   src/ \
-  immich-mcp-server \
-  immich.go \
-  main.go \
-  go.mod \
-  go.sum \
   run-mcp-server.sh \
   LICENSE \
   README.md \
   .env.example \
   .mcp.json.example \
   .gitignore \
-  -x "assets/.gitkeep" \
-  -x "assets/demo-script.md" \
   -x "src/immich_mcp_server/__pycache__/*" \
-  -x "scripts/location_inventory.json" \
   -x "*.DS_Store"
 
 # Report
