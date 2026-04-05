@@ -9,7 +9,7 @@ import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 
 from .immich_client import ImmichClient
 
@@ -33,7 +33,7 @@ mcp = FastMCP(
 )
 
 
-def _client(ctx) -> ImmichClient:
+def _client(ctx: Context) -> ImmichClient:
     """Get the Immich client from the request context."""
     return ctx.request_context.lifespan_context["immich"]
 
@@ -42,21 +42,21 @@ def _client(ctx) -> ImmichClient:
 
 
 @mcp.tool()
-async def ping(ctx) -> str:
+async def ping(ctx: Context) -> str:
     """Check Immich server connectivity. Returns 'pong' if connected."""
     result = await _client(ctx).ping()
     return json.dumps(result)
 
 
 @mcp.tool()
-async def get_server_version(ctx) -> str:
+async def get_server_version(ctx: Context) -> str:
     """Get the Immich server version."""
     result = await _client(ctx).get_server_version()
     return json.dumps(result)
 
 
 @mcp.tool()
-async def get_statistics(ctx) -> str:
+async def get_statistics(ctx: Context) -> str:
     """Get library statistics: total photos, videos, and storage usage."""
     result = await _client(ctx).get_statistics()
     return json.dumps(result)
@@ -66,7 +66,7 @@ async def get_statistics(ctx) -> str:
 
 
 @mcp.tool()
-async def get_asset_info(ctx, asset_id: str) -> str:
+async def get_asset_info(ctx: Context, asset_id: str) -> str:
     """Get full metadata for a specific asset (EXIF, GPS, dates, camera, etc).
 
     Args:
@@ -78,7 +78,7 @@ async def get_asset_info(ctx, asset_id: str) -> str:
 
 @mcp.tool()
 async def get_map_markers(
-    ctx,
+    ctx: Context,
     file_created_after: str = "",
     file_created_before: str = "",
     is_favorite: bool | None = None,
@@ -104,7 +104,7 @@ async def get_map_markers(
 
 @mcp.tool()
 async def search_metadata(
-    ctx,
+    ctx: Context,
     city: str = "",
     state: str = "",
     country: str = "",
@@ -154,7 +154,7 @@ async def search_metadata(
 
 @mcp.tool()
 async def search_smart(
-    ctx,
+    ctx: Context,
     query: str,
     city: str = "",
     state: str = "",
@@ -198,7 +198,7 @@ async def search_smart(
 
 
 @mcp.tool()
-async def list_albums(ctx, shared: bool | None = None) -> str:
+async def list_albums(ctx: Context, shared: bool | None = None) -> str:
     """List all albums with their asset counts.
 
     Args:
@@ -221,7 +221,7 @@ async def list_albums(ctx, shared: bool | None = None) -> str:
 
 
 @mcp.tool()
-async def get_album(ctx, album_id: str) -> str:
+async def get_album(ctx: Context, album_id: str) -> str:
     """Get album details including all asset IDs.
 
     Args:
@@ -248,7 +248,7 @@ async def get_album(ctx, album_id: str) -> str:
 
 @mcp.tool()
 async def create_album(
-    ctx, name: str, description: str = "", asset_ids: list[str] | None = None
+    ctx: Context, name: str, description: str = "", asset_ids: list[str] | None = None
 ) -> str:
     """Create a new album.
 
@@ -272,7 +272,7 @@ async def create_album(
 
 @mcp.tool()
 async def update_album(
-    ctx, album_id: str, name: str = "", description: str = ""
+    ctx: Context, album_id: str, name: str = "", description: str = ""
 ) -> str:
     """Update an album's name or description.
 
@@ -290,7 +290,7 @@ async def update_album(
 
 
 @mcp.tool()
-async def delete_album(ctx, album_id: str) -> str:
+async def delete_album(ctx: Context, album_id: str) -> str:
     """Delete an album. Photos are NOT deleted, only the album container.
 
     Args:
@@ -301,7 +301,7 @@ async def delete_album(ctx, album_id: str) -> str:
 
 
 @mcp.tool()
-async def add_assets_to_album(ctx, album_id: str, asset_ids: list[str]) -> str:
+async def add_assets_to_album(ctx: Context, album_id: str, asset_ids: list[str]) -> str:
     """Add photos/videos to an album.
 
     Args:
@@ -313,7 +313,7 @@ async def add_assets_to_album(ctx, album_id: str, asset_ids: list[str]) -> str:
 
 
 @mcp.tool()
-async def remove_assets_from_album(ctx, album_id: str, asset_ids: list[str]) -> str:
+async def remove_assets_from_album(ctx: Context, album_id: str, asset_ids: list[str]) -> str:
     """Remove photos/videos from an album. The photos themselves are NOT deleted.
 
     Args:
@@ -328,7 +328,7 @@ async def remove_assets_from_album(ctx, album_id: str, asset_ids: list[str]) -> 
 
 
 @mcp.tool()
-async def list_shared_links(ctx) -> str:
+async def list_shared_links(ctx: Context) -> str:
     """List all shared links (public URLs for albums/assets)."""
     result = await _client(ctx).list_shared_links()
     links = [
@@ -347,7 +347,7 @@ async def list_shared_links(ctx) -> str:
 
 @mcp.tool()
 async def create_shared_link(
-    ctx,
+    ctx: Context,
     album_id: str,
     allow_download: bool = True,
     show_metadata: bool = True,

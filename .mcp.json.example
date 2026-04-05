@@ -1,11 +1,14 @@
 {
   "mcpServers": {
     "immich": {
-      "command": "uvx",
-      "args": ["immich-mcp"],
+      "command": "python3",
+      "args": ["-m", "immich_mcp_server"],
+      "cwd": "src",
       "env": {
         "IMMICH_BASE_URL": "https://your-immich-instance.com",
-        "IMMICH_API_KEY": "your-api-key-here"
+        "IMMICH_API_KEY": "your-api-key-here",
+        "MCP_TRANSPORT": "stdio",
+        "PYTHONPATH": "."
       }
     }
   }
