@@ -478,21 +478,15 @@
   .p7 { background: linear-gradient(140deg, #4a5a3a, #7a9a5a, #b8d87a); }
   .p8 { background: linear-gradient(125deg, #5a3a3a, #9a6a5a, #d8a88a); }
 
-  /* ===== Progress bar ===== */
-  .progress-bar { height: 3px; background: rgba(45,35,20,0.06); }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    width: 0%;
-    transition: width 0.5s linear;
+  /* ===== Button click effect ===== */
+  .action-btn.clicked {
+    animation: btnClick 0.5s ease;
   }
-  .watermark {
-    text-align: center;
-    padding: 10px;
-    font-size: 11px;
-    color: var(--text-dim);
-    opacity: 0.45;
-    font-weight: 500;
+  @keyframes btnClick {
+    0%   { transform: scale(1.10); }
+    30%  { transform: scale(0.92); background: rgba(201,100,66,0.25); }
+    60%  { transform: scale(1.05); }
+    100% { transform: scale(1.10); }
   }
 
   /* ===== Avatars ===== */
@@ -749,8 +743,6 @@
 
   </div>
 
-  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-  <div class="watermark">📸🧹🗺️ immich-photo-manager v1.0.0 · drolosoft.com</div>
 </div>
 
 <script>
@@ -788,10 +780,29 @@
     if (el) el.classList.add('visible');
   }
 
-  // Smooth scroll to element
-  function scrollTo(id, block) {
+  // Smooth scroll — pixel-precise, no browser quirks
+  // mode: 'top'    → element top at viewport top
+  //        'bottom' → element bottom at viewport bottom
+  // Uses rAF to ensure layout is computed after fadeIn/reveal
+  function smoothScroll(id, mode) {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: block || 'end' });
+    if (!el) return;
+    requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const absTop = rect.top + window.scrollY;
+      const absBot = rect.bottom + window.scrollY;
+      const vh = window.innerHeight;
+      const pad = 24;
+      let target;
+      if (mode === 'top') {
+        target = absTop - pad;
+      } else {
+        // 'bottom' (default) — element bottom flush with viewport bottom
+        target = absBot - vh + pad;
+      }
+      target = Math.max(0, target);
+      window.scrollTo({ top: target, behavior: 'smooth' });
+    });
   }
 
   // Show + fade in display:none elements (no scroll)
@@ -804,26 +815,20 @@
   }
 
   // ===== Main sequence =====
-  const progress = document.getElementById('progress');
-  const TOTAL = 19500;
-
-  function setProgress(ms) {
-    progress.style.width = Math.min((ms / TOTAL) * 100, 100) + '%';
-  }
 
   function play() {
     let t = 0;
     function at(delay, fn) {
       t += delay;
       const d = t;
-      setTimeout(() => { setProgress(d); fn(); }, d);
+      setTimeout(fn, d);
     }
 
     // === SCREEN 1: Setup ===
     at(600, () => reveal('s1-user'));
     at(1200, () => {
       reveal('s1-card');
-      scrollTo('s1-card');
+      smoothScroll('s1-card', 'bottom');
       setTimeout(() => {
         typeUrl(() => {
           setTimeout(() => {
@@ -841,7 +846,7 @@
     at(3500, () => { reveal('s2-sep'); reveal('s2-user'); });
     at(800, () => {
       reveal('s2-gallery');
-      scrollTo('s2-gallery', 'start');          // show header + top row
+      smoothScroll('s2-gallery', 'top');              // show header + top row
     });
 
     // === Selection (no extra scroll — stays on gallery) ===
@@ -853,7 +858,12 @@
       document.getElementById('panel-title').textContent = '3 photos selected — choose an action';
     });
     at(900, () => document.getElementById('btn-add-album').classList.add('glow'));
-    at(700, () => document.getElementById('toast').classList.add('show'));
+    at(700, () => {
+      // Simulate button click
+      const btn = document.getElementById('btn-add-album');
+      btn.classList.add('clicked');
+      setTimeout(() => document.getElementById('toast').classList.add('show'), 400);
+    });
 
     // === SCREEN 4: Paste command + confirmation ===
     at(1800, () => {
@@ -861,24 +871,25 @@
       document.getElementById('btn-add-album').classList.remove('glow');
       fadeIn('s2b-user');
       fadeIn('s2b-confirm');
-      scrollTo('s2b-confirm');                   // one scroll to show both
+      smoothScroll('s2b-confirm', 'bottom');           // one scroll to show both
     });
 
     // === SCREEN 5: Album view ===
     at(2000, () => {
       fadeIn('s2c-album');
-      scrollTo('s2c-album');                     // one scroll
+      smoothScroll('s2c-album', 'bottom');             // one scroll
     });
 
     // === SCREEN 6: Geographic albums ===
     at(2500, () => {
       reveal('s3-sep'); reveal('s3-user');
       reveal('s3-result');
-      scrollTo('s3-result');                     // one scroll to final scene
+      // Scroll to absolute bottom of page so nothing is cut off
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
     });
 
-    // End
-    at(1500, () => setProgress(TOTAL));
   }
 
   window.addEventListener('load', () => setTimeout(play, 400));
