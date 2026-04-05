@@ -3,12 +3,11 @@
     "immich": {
       "command": "python3",
       "args": ["-m", "immich_mcp_server"],
-      "cwd": "src",
+      "cwd": "./src",
       "env": {
-        "IMMICH_BASE_URL": "https://your-immich-instance.com",
-        "IMMICH_API_KEY": "your-api-key-here",
         "MCP_TRANSPORT": "stdio",
-        "PYTHONPATH": "."
+        "IMMICH_BASE_URL": "https://your-immich-server.com",
+        "IMMICH_API_KEY": "your-api-key-here"
       }
     }
   }

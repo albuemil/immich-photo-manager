@@ -1,8 +1,14 @@
 {
   "mcpServers": {
     "immich": {
-      "type": "http",
-      "url": "http://localhost:8626/mcp"
+      "command": "python3",
+      "args": ["-m", "immich_mcp_server"],
+      "cwd": "./src",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "IMMICH_BASE_URL": "https://your-immich-server.com",
+        "IMMICH_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
