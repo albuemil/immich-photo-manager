@@ -27,7 +27,8 @@ rm -f "${PLUGIN_NAME}"*.plugin
 # Create the .plugin zip
 # Include only what plugin users need — no Go binary, no dev scripts, no demo assets
 zip -r "$OUTPUT" \
-  .claude-plugin/ \
+  .claude-plugin/plugin.json \
+  .mcp.json \
   assets/icon.png \
   assets/index-template.html \
   assets/viewer-template.html \
