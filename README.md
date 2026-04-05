@@ -26,25 +26,22 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 
 ### Option A: Install as Claude Plugin (recommended)
 
-```bash
-# 1. Clone the repository
+```sh
 git clone https://github.com/drolosoft/immich-photo-manager.git
 cd immich-photo-manager
 
-# 2. Run the interactive setup (installs Python deps, configures MCP)
-./scripts/setup-mcp.sh
-
-# 3. Register the marketplace and install the plugin
-claude plugin marketplace add ~/immich-photo-manager
+# Register the marketplace and install
+claude plugin marketplace add .
 claude plugin install immich-photo-manager
-
-# 4. Restart Claude Code or start a new Cowork session, then verify:
-claude -p "use the immich ping tool"
 ```
+
+Verify with `claude plugin list`.
 
 That's it. Open Claude and say **"how healthy is my photo library?"** to get started.
 
-### Option B: Manual MCP Configuration
+> **Note:** The plugin connects to your Immich MCP server at `localhost:8626`. Make sure the server is running before using the plugin. See [Option B](#option-b-manual-mcp-server-setup) for how to build and start the server.
+
+### Option B: Manual MCP Server Setup
 
 If you prefer to configure the MCP server manually instead of using the setup script:
 
