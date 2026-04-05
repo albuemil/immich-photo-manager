@@ -17,12 +17,40 @@
 3. Record the GIF:
 
 ```bash
-cd ~/Git/drolosoft/immich-photo-manager/assets
-python3 -m http.server 9876
-# Open http://localhost:9876/demo.html in Chrome
-# Use Cowork gif_creator or Kap to record
-# Export as GIF → save to assets/demo.gif
+# One command — fully automated via Playwright + ffmpeg
+node scripts/record-demo.js
+
+# On headless Linux / CI (no display):
+xvfb-run node scripts/record-demo.js
 ```
+
+### First-time setup (prerequisites)
+
+```bash
+npm install playwright
+npx playwright install chromium
+# macOS: brew install ffmpeg
+# Linux: apt install ffmpeg xvfb
+```
+
+### What the script does
+
+1. Starts a local HTTP server serving `assets/demo.html`
+2. Opens headless Chromium (800×520, 2× retina, dark mode)
+3. Records the full animation via Playwright's video recorder (~20s)
+4. Converts WebM → GIF with ffmpeg two-pass palette optimization
+5. Saves to `assets/demo.gif` (~2-3 MB)
+
+### Configuration (in `scripts/record-demo.js`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WIDTH` | 800 | Viewport width |
+| `HEIGHT` | 520 | Viewport height |
+| `WAIT_MS` | 20000 | Recording duration (ms) |
+| `TRIM_START` | 0.3 | Trim dark intro (seconds) |
+| `GIF_FPS` | 10 | GIF frame rate |
+| `MAX_COLORS` | 96 | GIF palette size |
 
 ---
 
@@ -202,10 +230,13 @@ The demo touches these plugin capabilities:
 
 | Setting | Value |
 |---------|-------|
-| **Browser width** | 960px |
-| **Format** | GIF, < 5 MB |
-| **FPS** | 10-15 |
-| **Quality** | Medium (gif_creator quality: 10) |
+| **Method** | `scripts/record-demo.js` (Playwright + ffmpeg) |
+| **Browser** | Headless Chromium, 800×520, 2× deviceScaleFactor |
+| **Color scheme** | dark |
+| **Format** | GIF, two-pass palette, < 5 MB |
+| **FPS** | 10 |
+| **Duration** | ~20s (trimmed 0.3s dark intro) |
+| **Output size** | ~2.5 MB |
 | **Overlays** | None (clean recording) |
 
 ---
