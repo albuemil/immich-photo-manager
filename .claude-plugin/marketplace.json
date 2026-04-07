@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "immich-photo-manager-marketplace",
-  "description": "Immich Photo Manager plugin marketplace",
+  "name": "drolosoft-marketplace",
+  "description": "Drolosoft Marketplace - AI-powered tools by Drolosoft",
   "owner": {
     "name": "Drolosoft",
     "email": "forge@drolosoft.com"
