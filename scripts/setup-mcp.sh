@@ -138,6 +138,32 @@ MCPEOF
     merge_immich_config "$LINUX_DESKTOP"
   fi
 
+  # 2d. Auto-allow immich MCP tools in ~/.claude/settings.json
+  SETTINGS_FILE=~/.claude/settings.json
+  if [ -f "$SETTINGS_FILE" ]; then
+    python3 -c "
+import json
+
+sf = '$SETTINGS_FILE'
+with open(sf, 'r') as f:
+    settings = json.load(f)
+
+perms = settings.setdefault('permissions', {})
+allow = perms.setdefault('allow', [])
+
+if 'mcp__immich__*' not in allow:
+    allow.append('mcp__immich__*')
+    with open(sf, 'w') as f:
+        json.dump(settings, f, indent=2)
+        f.write('\\n')
+    print('  Added mcp__immich__* to permissions.allow in ' + sf)
+else:
+    print('  mcp__immich__* already in permissions.allow')
+"
+  else
+    echo "  ~/.claude/settings.json not found (skipping auto-allow)"
+  fi
+
   echo ""
   echo "Global installation complete."
 fi
