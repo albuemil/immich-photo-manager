@@ -19,14 +19,15 @@ if ! command -v python3 &>/dev/null; then
   echo "ERROR: python3 not found. Please install Python 3.10+."
   exit 1
 fi
-echo "Python: $(python3 --version)"
+PYTHON_PATH="$(which python3)"
+echo "Python: $(python3 --version) ($PYTHON_PATH)"
 
 # Install dependencies
 echo ""
 echo "Installing Python dependencies..."
-if [ -f "$SCRIPT_DIR/src/requirements.txt" ]; then
-  pip3 install -r "$SCRIPT_DIR/src/requirements.txt" --break-system-packages 2>/dev/null \
-    || pip3 install -r "$SCRIPT_DIR/src/requirements.txt" 2>/dev/null \
+if [ -f "$SRC_DIR/requirements.txt" ]; then
+  pip3 install -r "$SRC_DIR/requirements.txt" --break-system-packages 2>/dev/null \
+    || pip3 install -r "$SRC_DIR/requirements.txt" 2>/dev/null \
     || echo "WARNING: pip install failed. Please install dependencies manually: pip3 install mcp httpx"
 else
   pip3 install mcp httpx --break-system-packages 2>/dev/null \
@@ -44,10 +45,10 @@ if [ -z "$IMMICH_URL" ] || [ -z "$IMMICH_KEY" ]; then
   exit 1
 fi
 
-# Detect python3 absolute path
-PYTHON_PATH="$(which python3)"
+# Build the immich MCP server JSON block
+IMMICH_BLOCK="{\"command\":\"$PYTHON_PATH\",\"args\":[\"-m\",\"immich_mcp_server\"],\"env\":{\"PYTHONPATH\":\"$SRC_DIR\",\"MCP_TRANSPORT\":\"stdio\",\"IMMICH_BASE_URL\":\"$IMMICH_URL\",\"IMMICH_API_KEY\":\"$IMMICH_KEY\"}}"
 
-# Write project-level .mcp.json
+# ---- Project-level .mcp.json ----
 cat > "$SCRIPT_DIR/.mcp.json" << MCPEOF
 {
   "mcpServers": {
@@ -64,11 +65,9 @@ cat > "$SCRIPT_DIR/.mcp.json" << MCPEOF
   }
 }
 MCPEOF
-
-echo ""
 echo "Created $SCRIPT_DIR/.mcp.json"
 
-# Optionally install globally for Cowork / all projects
+# ---- Global ~/.claude/mcp.json (auto-merge) ----
 echo ""
 read -p "Also install globally for Cowork / all projects? (y/N): " GLOBAL
 if [ "$GLOBAL" = "y" ] || [ "$GLOBAL" = "Y" ]; then
@@ -76,21 +75,28 @@ if [ "$GLOBAL" = "y" ] || [ "$GLOBAL" = "Y" ]; then
   GLOBAL_FILE=~/.claude/mcp.json
 
   if [ -f "$GLOBAL_FILE" ]; then
-    echo ""
-    echo "WARNING: $GLOBAL_FILE already exists."
-    echo "You may need to manually merge the immich entry into it."
-    echo "Here is the JSON block to add under \"mcpServers\":"
-    echo ""
-    echo "  \"immich\": {"
-    echo "    \"command\": \"$PYTHON_PATH\","
-    echo "    \"args\": [\"-m\", \"immich_mcp_server\"],"
-    echo "    \"env\": {"
-    echo "      \"PYTHONPATH\": \"$SRC_DIR\","
-    echo "      \"MCP_TRANSPORT\": \"stdio\","
-    echo "      \"IMMICH_BASE_URL\": \"$IMMICH_URL\","
-    echo "      \"IMMICH_API_KEY\": \"$IMMICH_KEY\""
-    echo "    }"
-    echo "  }"
+    # Auto-merge: use python3 to insert/replace the immich key in existing JSON
+    python3 -c "
+import json, sys
+
+gf = '$GLOBAL_FILE'
+try:
+    with open(gf, 'r') as f:
+        config = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    config = {'mcpServers': {}}
+
+if 'mcpServers' not in config:
+    config['mcpServers'] = {}
+
+config['mcpServers']['immich'] = json.loads('$IMMICH_BLOCK')
+
+with open(gf, 'w') as f:
+    json.dump(config, f, indent=2)
+    f.write('\n')
+
+print(f'Updated {gf} — immich entry merged successfully.')
+"
   else
     cat > "$GLOBAL_FILE" << MCPEOF
 {
@@ -116,14 +122,6 @@ echo ""
 echo "=== Setup complete! ==="
 echo ""
 echo "Next steps:"
-echo "  1. Register the plugin marketplace:"
-echo "     claude plugin marketplace add $SCRIPT_DIR"
-echo ""
-echo "  2. Install the plugin:"
-echo "     claude plugin install immich-photo-manager"
-echo ""
-echo "  3. Restart Claude Code or start a new Cowork session"
-echo ""
-echo "  4. Verify everything works:"
-echo "     claude -p \"use the immich ping tool\""
+echo "  1. Restart Claude Desktop or start a new Cowork session"
+echo "  2. Verify: ask Claude to 'use the immich ping tool'"
 echo ""
