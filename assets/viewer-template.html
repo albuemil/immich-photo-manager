@@ -403,7 +403,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 </div>
 
 <script>
-const IMMICH="{{IMMICH_URL}}",PAGE_SIZE={{PAGE_SIZE}},TOTAL={{PHOTO_COUNT}},ALBUM_TOTAL={{ALBUM_TOTAL}};
+const IMMICH="{{IMMICH_URL}}",PAGE_SIZE={{PAGE_SIZE}},TOTAL={{PHOTO_COUNT}},ALBUM_TOTAL=parseInt("{{ALBUM_TOTAL}}")||0;
 const ALL=[
 {{PHOTO_ENTRIES}}
 ];

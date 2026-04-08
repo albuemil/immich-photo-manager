@@ -217,6 +217,13 @@ Entries are comma-separated, one per line.
 5. **Write the HTML**: Save to the outputs directory as `<album-name-slug>.html`
 6. **Present to user**: Share the file link
 
+### ⚠️ Placeholder Rules (IMPORTANT)
+
+- **`{{PAGE_SIZE}}`**, **`{{PHOTO_COUNT}}`**, **`{{ALBUM_TOTAL}}`**: Must be **plain integers** (e.g. `200`, not `200+` or `"200"`). These are injected directly into JavaScript.
+- **`{{ALBUM_NAME}}`**, **`{{SEARCH_QUERY}}`**, **`{{IMMICH_URL}}`**: Can be any string (they are placed inside HTML or JS string literals).
+- **`{{PHOTO_ENTRIES}}`**: Must be valid JS object literals, comma-separated.
+- **`{{ALBUMS_JSON}}`**: Must be a valid JS array literal.
+
 ### Performance Notes
 
 - **PAGE_SIZE**: Keep at 6 for initial load, the rest lazy-loads

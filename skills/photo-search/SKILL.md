@@ -122,6 +122,12 @@ The template includes:
 **After generating a viewer, also update the index dashboard** (`index.html`)
 by rebuilding it from `assets/index-template.html`. See viewer-template-spec.md.
 
+### ⚠️ Placeholder Rules (IMPORTANT)
+
+- **`{{PAGE_SIZE}}`**, **`{{PHOTO_COUNT}}`**, **`{{ALBUM_TOTAL}}`**: Must be **plain integers** (e.g. `200`, not `200+` or `"200"`). These are injected directly into JavaScript.
+- **`{{ALBUM_NAME}}`**, **`{{SEARCH_QUERY}}`**, **`{{IMMICH_URL}}`**: Can be any string.
+- **`{{PHOTO_ENTRIES}}`**: Must be valid JS object literals, comma-separated.
+
 ### Guidelines
 - Show **all photos** for small sets (≤50), use `count=20` + pagination for larger sets
 - Every thumbnail MUST link to its Immich entity
