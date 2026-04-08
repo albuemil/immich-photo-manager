@@ -226,7 +226,7 @@ Each album object needs: `id` (string), `name` (string), `total` (integer).
 - **`{{PAGE_SIZE}}`**, **`{{PHOTO_COUNT}}`**, **`{{ALBUM_TOTAL}}`**: Must be **plain integers** (e.g. `200`, not `200+` or `"200"`). These are injected directly into JavaScript.
 - **`{{ALBUM_NAME}}`**, **`{{SEARCH_QUERY}}`**, **`{{IMMICH_URL}}`**: Can be any string (they are placed inside HTML or JS string literals).
 - **`{{PHOTO_ENTRIES}}`**: Must be valid JS object literals, comma-separated.
-- **`{{ALBUMS_JSON}}`**: Must be a valid JS array literal.
+- **`{{ALBUMS_JSON}}`**: Must be comma-separated JSON objects (NOT wrapped in array brackets — the template adds `[...]`). Example: `{"id":"abc","name":"My Album","total":50}`. If no related albums, use empty string.
 
 ### CRITICAL: Related Albums = REAL Albums Only
 
@@ -257,7 +257,7 @@ User: "Show me photos from Lanzarote Verde"
    - {{PAGE_SIZE}} -> 6
    - {{PHOTO_COUNT}} -> 20
    - {{PHOTO_ENTRIES}} -> actual photo entries from temp file
-   - {{ALBUMS_JSON}} -> [{"id":"abc123","name":"Lanzarote Verde","total":273}]
+   - {{ALBUMS_JSON}} -> {"id":"abc123","name":"Lanzarote Verde","total":273}
 5. Save as lanzarote-verde.html
 6. Present computer:// link
 ```

@@ -135,12 +135,16 @@ Use `get_thumbnails_batch(asset_ids, limit=20)` to get thumbnails directly from 
 
 Use the canonical template at `assets/viewer-template.html`. Read the template file, replace `{{PLACEHOLDERS}}` with actual data, and write the result.
 
-### Placeholder Rules (CRITICAL)
+### Placeholder Rules
 
-- **`{{PAGE_SIZE}}`**, **`{{PHOTO_COUNT}}`**, **`{{ALBUM_TOTAL}}`**: Must be **plain integers** (e.g. `200`, not `200+` or `"200"`). These go directly into JavaScript.
-- **`{{ALBUM_NAME}}`**, **`{{SEARCH_QUERY}}`**, **`{{IMMICH_URL}}`**: Can be any string.
+- **`{{PAGE_SIZE}}`**, **`{{PHOTO_COUNT}}`**, **`{{ALBUM_TOTAL}}`**: Should be plain integers (e.g. `20`). The template uses `parseInt()` with fallbacks, so non-numeric values degrade gracefully (PAGE_SIZE defaults to 6, others to 0).
+- **`{{ALBUM_NAME}}`**: Can contain any characters including apostrophes (e.g. "L'Hospitalet"). Safe in HTML contexts. The JS alt-text reads from `document.title` instead of re-injecting this placeholder, so apostrophes won't break JS.
+- **`{{SEARCH_QUERY}}`**, **`{{IMMICH_URL}}`**: Can be any string.
 - **`{{PHOTO_ENTRIES}}`**: Must be valid JS object literals, comma-separated.
-- **`{{ALBUMS_JSON}}`**: Must be valid JSON. Use a JSON array of objects with `id`, `name`, `total` keys. If no real albums, use `[]`.
+- **`{{ALBUMS_JSON}}`**: JSON album objects. The template wraps them in `[...].flat()`, so you can pass any of these formats:
+  - Comma-separated objects: `{"id":"abc","name":"X","total":50},{"id":"def","name":"Y","total":30}`
+  - A JSON array: `[{"id":"abc","name":"X","total":50}]`
+  - Empty string (no albums): the template produces `[].flat()` → `[]` and hides the section
 
 ### Thumbnail Pipeline (How Overflow Works)
 
@@ -165,11 +169,11 @@ Each photo entry in `{{PHOTO_ENTRIES}}`:
 
 `{{ALBUMS_JSON}}` — a JSON array of REAL albums:
 
-```json
-[{"id":"abc123","name":"Tikal & Petén","total":169}]
+```
+{"id":"abc123","name":"Tikal & Petén","total":169},{"id":"xyz789","name":"Guatemala","total":392}
 ```
 
-If no real albums match, use `[]`.
+Comma-separated JSON objects — NO outer array brackets (the template adds `[...]`). If no real albums match, use empty string.
 
 ### Generation Workflow (Concrete Example)
 
@@ -189,7 +193,7 @@ User: "show me photos of Tikal"
    - {{PAGE_SIZE}} -> 6
    - {{PHOTO_COUNT}} -> 20
    - {{PHOTO_ENTRIES}} -> actual photo entries from temp file
-   - {{ALBUMS_JSON}} -> [{"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}]
+   - {{ALBUMS_JSON}} -> {"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}
 7. Write tikal.html to outputs
 8. Present computer:// link
 ```
@@ -207,7 +211,7 @@ User: "show me sunset photos"
 6. Replace placeholders:
    - {{ALBUM_NAME}} -> "Sunset Photos"
    - {{ALBUM_TOTAL}} -> 35
-   - {{ALBUMS_JSON}} -> []    <-- empty, no real albums match
+   - {{ALBUMS_JSON}} ->     <-- empty string, no real albums match
 7. Write sunset-photos.html to outputs
 8. Present computer:// link
 ```

@@ -403,7 +403,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 </div>
 
 <script>
-const IMMICH="{{IMMICH_URL}}",PAGE_SIZE={{PAGE_SIZE}},TOTAL={{PHOTO_COUNT}},ALBUM_TOTAL=parseInt("{{ALBUM_TOTAL}}")||0;
+const IMMICH="{{IMMICH_URL}}",PAGE_SIZE=parseInt("{{PAGE_SIZE}}")||6,TOTAL=parseInt("{{PHOTO_COUNT}}")||0,ALBUM_TOTAL=parseInt("{{ALBUM_TOTAL}}")||0;
 const ALL=[
 {{PHOTO_ENTRIES}}
 ];
@@ -504,7 +504,7 @@ function loadPage(){
     const card=document.createElement('div');card.className='card skeleton';
     const a=document.createElement('a');a.href=IMMICH+'/photos/'+img.id;a.target='_blank';a.rel='noopener';
     const idx=i;card.addEventListener('dblclick',ev=>{ev.preventDefault();openGal(idx)});
-    const el=document.createElement('img');el.alt='{{ALBUM_NAME}} — '+(i+1);el.dataset.src=img.src;
+    const el=document.createElement('img');el.alt=(document.title.split(' \u2014')[0]||'Photo')+' \u2014 '+(i+1);el.dataset.src=img.src;
     el.addEventListener('load',function(){this.classList.add('loaded');card.classList.remove('skeleton')});
     const meta=document.createElement('div');meta.className='card-meta';
     const label=document.createElement('span');label.className='card-label';label.textContent='Photo '+(i+1);
@@ -539,7 +539,7 @@ window.addEventListener('scroll',()=>{
 loadPage();
 
 /* Albums - supports 0, 1, or N album cards */
-const ALBUMS = (function(){try{var d={{ALBUMS_JSON}};return Array.isArray(d)?d:[d]}catch(e){return[]}})();
+const ALBUMS = (function(){try{return [{{ALBUMS_JSON}}].flat()}catch(e){return[]}})();
 (function renderAlbums(){
   const section=$('albumsSection'),grid=$('albumsGrid');
   if(!ALBUMS||!ALBUMS.length){section.style.display='none';return}
