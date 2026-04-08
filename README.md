@@ -11,7 +11,7 @@
 
 > **📸🧹🗺️ MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
-If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 19 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
+If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 16 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
 
 <p align="center"><img src="https://raw.githubusercontent.com/drolosoft/immich-photo-manager/main/assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
@@ -26,58 +26,54 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 
 ### Option A: Install as Claude Plugin (recommended)
 
-**In Claude Code CLI:**
-
-```sh
-/plugin marketplace add drolosoft/immich-photo-manager
-/plugin install immich-photo-manager@drolosoft/immich-photo-manager
-```
-
-**For local testing (development):**
-
-```sh
+```bash
+# 1. Clone the repository
 git clone https://github.com/drolosoft/immich-photo-manager.git
-claude --plugin-dir ./immich-photo-manager
-```
+cd immich-photo-manager
 
-After installing, configure your Immich credentials in `.env` at the plugin directory:
+# 2. Run the interactive setup (installs deps, configures MCP)
+./scripts/setup-mcp.sh
 
-```sh
-IMMICH_BASE_URL=http://your-immich-server:2283
-IMMICH_API_KEY=your-api-key-here
+# 3. Register the marketplace and install the plugin
+claude plugin marketplace add ~/immich-photo-manager
+claude plugin install immich-photo-manager
+
+# 4. Restart Claude Code or start a new Cowork session, then verify:
+claude -p "use the immich ping tool"
 ```
 
 That's it. Open Claude and say **"how healthy is my photo library?"** to get started.
 
-### Option B: Manual MCP Server Setup
+### Option B: Manual MCP Configuration
 
-If you prefer to run the MCP server independently (requires Go 1.24+):
+If you prefer to configure the MCP server manually instead of using the setup script:
 
-```sh
+```bash
 git clone https://github.com/drolosoft/immich-photo-manager.git
 cd immich-photo-manager
-go build -o immich-mcp-server .
+pip3 install -r src/requirements.txt
 ```
 
-```sh
-export IMMICH_BASE_URL="http://your-immich-server:2283"
-export IMMICH_API_KEY="your-api-key-here"
-./immich-mcp-server
-```
-
-The server starts on port `8626` by default (override with `MCP_PORT` env var).
-
-Then add to your `.mcp.json`:
+Create `.mcp.json` in the project root:
 
 ```json
 {
   "mcpServers": {
     "immich": {
-      "url": "http://localhost:8626/mcp"
+      "command": "python3",
+      "args": ["-m", "immich_mcp_server"],
+      "env": {
+        "PYTHONPATH": "/ABSOLUTE/PATH/TO/immich-photo-manager/src",
+        "MCP_TRANSPORT": "stdio",
+        "IMMICH_BASE_URL": "https://your-immich-server.com",
+        "IMMICH_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
 ```
+
+> **Important:** Use `PYTHONPATH` pointing to the `src/` directory. Do NOT use `cwd` (it is silently ignored by Claude Code).
 
 ---
 
@@ -204,17 +200,17 @@ Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
                                      :8626          your-instance
 ```
 
-The MCP server is a single Go binary built with [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0. It exposes 19 tools over Streamable HTTP transport on `/mcp`, with a health check on `/health`.
+The MCP server is a single Go binary built with [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0. It exposes 16 tools over Streamable HTTP transport on `/mcp`, with a health check on `/health`.
 
-### 19 MCP Tools
+### 16 MCP Tools
 
 | Category | Tools |
 |----------|-------|
 | 🏥 Health | `ping`, `get_server_version`, `get_statistics` |
-| 📷 Assets | `get_asset_info`, `get_asset_thumbnail`, `get_map_markers` |
+| 📷 Assets | `get_asset_info`, `get_map_markers` |
 | 🔍 Search | `search_metadata`, `search_smart` (CLIP) |
-| 📁 Albums | `list_albums`, `get_album`, `get_album_thumbnails`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
-| 🔗 Sharing | `list_shared_links`, `create_shared_link`, `delete_shared_link` |
+| 📁 Albums | `list_albums`, `get_album`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
+| 🔗 Sharing | `list_shared_links`, `create_shared_link` |
 
 See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types, and examples.
 
@@ -226,7 +222,7 @@ See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types
 |----------|-------------|
 | **[Getting Started](doc/GETTING-STARTED.md)** | Installation, configuration, deployment options, and troubleshooting |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 19 MCP tools — parameters, return types, examples |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 16 MCP tools — parameters, return types, examples |
 
 ### Additional dependencies (optional)
 

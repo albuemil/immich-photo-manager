@@ -10,7 +10,7 @@ Step-by-step guide to installing, configuring, and running the Immich Photo Mana
 
 - **Immich instance** — Self-hosted, any recent version (v1.90+). [Installation guide](https://immich.app/docs/install/docker-compose)
 - **Immich API key** — Generated from Immich web UI → User Settings → API Keys. [How to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key)
-- **Go 1.24+** — To build the MCP server binary. [Download Go](https://go.dev/dl/)
+- **Python 3.10+** — To run the MCP server. [Download Python](https://www.python.org/downloads/)
 - **Claude** — Desktop app with Cowork mode, or Claude Code CLI
 
 ### Optional (for advanced skills)
@@ -26,69 +26,39 @@ Step-by-step guide to installing, configuring, and running the Immich Photo Mana
 
 ## Installation
 
-### 1. Clone and build
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/drolosoft/immich-photo-manager.git
 cd immich-photo-manager
-go build -o immich-mcp-server .
 ```
 
-### 2. Configure environment
+### 2. Run the interactive setup
 
 ```bash
-cp .mcp.json.example .mcp.json
+./scripts/setup-mcp.sh
 ```
 
-Edit `.mcp.json` with your Immich credentials:
+This will:
+- Install Python dependencies (`mcp`, `httpx`)
+- Ask for your Immich server URL and API key
+- Generate `.mcp.json` with the correct configuration
+- Optionally configure global access for Cowork mode
 
-```json
-{
-  "mcpServers": {
-    "immich": {
-      "command": "./immich-mcp-server",
-      "env": {
-        "IMMICH_BASE_URL": "http://your-immich-server:2283",
-        "IMMICH_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-### 3. Test the connection
-
-Start the server manually to verify:
+### 3. Install the Claude plugin
 
 ```bash
-export IMMICH_BASE_URL="http://your-immich-server:2283"
-export IMMICH_API_KEY="your-api-key-here"
-./immich-mcp-server
+claude plugin marketplace add ~/immich-photo-manager
+claude plugin install immich-photo-manager
 ```
 
-The server starts on port `8626` by default. Check the health endpoint:
+### 4. Verify
+
+**Restart Claude Code** or start a new Cowork session (MCP connections are established at startup), then:
 
 ```bash
-curl http://localhost:8626/health
+claude -p "use the immich ping tool"
 ```
-
-### 4. Install in Claude
-
-**Cowork mode** (desktop app):
-- Drag the `.plugin` file into Settings → Plugins
-- Or add the MCP server URL to your Cowork configuration
-
-**Claude Code** (CLI):
-- Add to your project's `.mcp.json`:
-  ```json
-  {
-    "mcpServers": {
-      "immich": {
-        "url": "http://localhost:8626/mcp"
-      }
-    }
-  }
-  ```
 
 ---
 
@@ -126,11 +96,14 @@ This triggers the `library-health-report` skill and gives you a comprehensive ov
 
 ### Environment Variables
 
+These are set automatically by `setup-mcp.sh` inside `.mcp.json`:
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `IMMICH_BASE_URL` | Yes | — | Your Immich server URL (e.g., `http://localhost:2283`) |
+| `IMMICH_BASE_URL` | Yes | — | Your Immich server URL (e.g., `https://photos.example.com`) |
 | `IMMICH_API_KEY` | Yes | — | API key from Immich user settings |
-| `MCP_PORT` | No | `8626` | Port for the MCP HTTP server |
+| `PYTHONPATH` | Yes | — | Path to `src/` directory in the cloned repo |
+| `MCP_TRANSPORT` | Yes | `stdio` | Must be `stdio` for Claude Code / Cowork |
 
 ### Database Access (for advanced skills)
 
@@ -152,10 +125,12 @@ These are only needed for: `library-health-report`, `timeline-gaps`, `metadata-f
 
 ### Local development
 
-Run the server directly:
+The MCP server runs automatically as a child process of Claude Code — no manual server startup needed. The configuration in `.mcp.json` tells Claude Code how to launch it.
+
+To test the server manually:
 
 ```bash
-./immich-mcp-server
+PYTHONPATH=./src MCP_TRANSPORT=stdio IMMICH_BASE_URL=https://your-server IMMICH_API_KEY=your-key python3 -m immich_mcp_server
 ```
 
 ### macOS (launchd)
