@@ -539,7 +539,7 @@ window.addEventListener('scroll',()=>{
 loadPage();
 
 /* Albums - supports 0, 1, or N album cards */
-const ALBUMS = [{{ALBUMS_JSON}}];
+const ALBUMS = (function(){try{var d={{ALBUMS_JSON}};return Array.isArray(d)?d:[d]}catch(e){return[]}})();
 (function renderAlbums(){
   const section=$('albumsSection'),grid=$('albumsGrid');
   if(!ALBUMS||!ALBUMS.length){section.style.display='none';return}

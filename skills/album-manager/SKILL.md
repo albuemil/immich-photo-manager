@@ -204,9 +204,13 @@ Entries are comma-separated, one per line.
 
 ### Albums JSON Format
 
+`{{ALBUMS_JSON}}` is injected raw into JS. It can be either a JSON **array** `[{...}]` or a single **object** `{...}` — the template handles both. Use standard JSON with quoted keys:
+
 ```javascript
-{id:"<album-id>",name:"<Album Name>",total:<count>}
+[{"id":"<album-id>","name":"<Album Name>","total":<count>}]
 ```
+
+Each album object needs: `id` (string), `name` (string), `total` (integer).
 
 ### Generation Workflow
 
