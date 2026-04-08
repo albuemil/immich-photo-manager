@@ -9,6 +9,7 @@ import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from mcp.server.fastmcp import FastMCP, Context
 
 from .immich_client import ImmichClient
@@ -179,16 +180,30 @@ async def search_smart(
         page: Page number (default 1).
         size: Results per page (default 50, max 200).
     """
-    result = await _client(ctx).search_smart(
-        query=query,
-        city=city or None,
-        state=state or None,
-        country=country or None,
-        taken_after=taken_after or None,
-        taken_before=taken_before or None,
-        page=page,
-        size=min(size, 200),
-    )
+    try:
+        result = await _client(ctx).search_smart(
+            query=query,
+            city=city or None,
+            state=state or None,
+            country=country or None,
+            taken_after=taken_after or None,
+            taken_before=taken_before or None,
+            page=page,
+            size=min(size, 200),
+        )
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 500:
+            return json.dumps({
+                "error": "Smart search is not available on this Immich server.",
+                "detail": (
+                    "The Immich machine learning service may not be running, "
+                    "or Smart Search (CLIP) is disabled. "
+                    "Enable it in Administration > Settings > Machine Learning Settings > Smart Search. "
+                    "See https://immich.app/docs/features/smart-search for details."
+                ),
+                "http_status": 500,
+            })
+        raise
     assets = result.get("assets", {}).get("items", [])
     total = result.get("assets", {}).get("total", 0)
     return json.dumps({"total": total, "page": page, "assets": assets}, default=str)

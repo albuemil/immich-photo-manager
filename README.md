@@ -75,6 +75,8 @@ Create `.mcp.json` in the project root:
 
 > **Important:** Use `PYTHONPATH` pointing to the `src/` directory. Do NOT use `cwd` (it is silently ignored by Claude Code).
 
+> **Note on Smart Search (CLIP):** The `search_smart` tool requires the Immich machine learning service to be running and Smart Search enabled in **Administration > Settings > Machine Learning Settings > Smart Search**. If the ML service is not configured, the tool will return a helpful error message instead of failing silently. All other 15 tools work without the ML service. See the [Immich Smart Search docs](https://immich.app/docs/features/smart-search) for setup details.
+
 ---
 
 ## 🎬 Core Workflow
