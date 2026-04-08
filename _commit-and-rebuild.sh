@@ -25,15 +25,20 @@ Search workflow redesign (photo-search SKILL.md):
 - Related Albums = only real albums
 
 Template hardening (viewer-template.html):
-- PAGE_SIZE, PHOTO_COUNT: wrapped in parseInt() with fallbacks (6 and 0)
-  Previously: bare injection like PAGE_SIZE=not-a-number caused SyntaxError
-- ALBUM_NAME in JS: replaced injection with document.title.split() read
-  Previously: apostrophes in names (L'Hospitalet) broke JS string literals
-- ALBUM_TOTAL: already had parseInt (confirmed)
-- ALBUMS_JSON: already had safe parser with try/catch (confirmed)
+- PAGE_SIZE, PHOTO_COUNT, ALBUM_TOTAL: wrapped in parseInt() with fallbacks
+  Previously: bare injection like PAGE_SIZE= caused SyntaxError
+- ALBUM_NAME in JS alt-text: replaced string injection with document.title
+  read. Previously: apostrophes in names (L'Hospitalet) broke JS strings
+- ALBUMS_JSON: changed to [{{ALBUMS_JSON}}].flat() pattern
+  Previously: empty string caused parse-time SyntaxError (var d=;)
+  that try/catch could not catch, killing the entire script block.
+  The .flat() pattern handles all formats: empty, single object,
+  comma-separated objects, or JSON array.
 
-Updated SKILL.md docs with relaxed placeholder rules reflecting the
-defensive template."
+Updated SKILL.md docs (photo-search + album-manager):
+- Documented {{PHOTO_ENTRIES}} placeholder format
+- Documented .flat() pattern and parseInt fallbacks
+- Added EXIF location quirks (Tikal=Flores, Lanzarote=municipalities)"
 
 echo ""
 echo "Pushing to remote..."
