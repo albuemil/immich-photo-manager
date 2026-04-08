@@ -1,5 +1,6 @@
 #!/bin/bash
-# setup-mcp.sh - Interactive setup for the Immich MCP server (Claude Code / Cowork)
+# setup-mcp.sh - Interactive setup for the Immich MCP server
+# Configures: project .mcp.json, ~/.claude/mcp.json (Claude Code/Cowork), claude_desktop_config.json (Desktop app)
 set -e
 
 echo ""
@@ -48,7 +49,33 @@ fi
 # Build the immich MCP server JSON block
 IMMICH_BLOCK="{\"command\":\"$PYTHON_PATH\",\"args\":[\"-m\",\"immich_mcp_server\"],\"env\":{\"PYTHONPATH\":\"$SRC_DIR\",\"MCP_TRANSPORT\":\"stdio\",\"IMMICH_BASE_URL\":\"$IMMICH_URL\",\"IMMICH_API_KEY\":\"$IMMICH_KEY\"}}"
 
-# ---- Project-level .mcp.json ----
+# Helper function: merge immich entry into an existing JSON config
+merge_immich_config() {
+  local CONFIG_FILE="$1"
+  python3 -c "
+import json, sys
+
+cf = '$CONFIG_FILE'
+try:
+    with open(cf, 'r') as f:
+        config = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    config = {'mcpServers': {}}
+
+if 'mcpServers' not in config:
+    config['mcpServers'] = {}
+
+config['mcpServers']['immich'] = json.loads('$IMMICH_BLOCK')
+
+with open(cf, 'w') as f:
+    json.dump(config, f, indent=2)
+    f.write('\n')
+
+print(f'  Updated {cf}')
+"
+}
+
+# ---- 1. Project-level .mcp.json ----
 cat > "$SCRIPT_DIR/.mcp.json" << MCPEOF
 {
   "mcpServers": {
@@ -67,38 +94,18 @@ cat > "$SCRIPT_DIR/.mcp.json" << MCPEOF
 MCPEOF
 echo "Created $SCRIPT_DIR/.mcp.json"
 
-# ---- Global ~/.claude/mcp.json (auto-merge) ----
+# ---- 2. Global configs (auto-merge into all Claude config locations) ----
 echo ""
-read -p "Also install globally for Cowork / all projects? (y/N): " GLOBAL
+read -p "Install globally for Claude Desktop + Cowork + Claude Code? (y/N): " GLOBAL
 if [ "$GLOBAL" = "y" ] || [ "$GLOBAL" = "Y" ]; then
+
+  # 2a. ~/.claude/mcp.json (Claude Code CLI + Cowork)
   mkdir -p ~/.claude
-  GLOBAL_FILE=~/.claude/mcp.json
-
-  if [ -f "$GLOBAL_FILE" ]; then
-    # Auto-merge: use python3 to insert/replace the immich key in existing JSON
-    python3 -c "
-import json, sys
-
-gf = '$GLOBAL_FILE'
-try:
-    with open(gf, 'r') as f:
-        config = json.load(f)
-except (json.JSONDecodeError, FileNotFoundError):
-    config = {'mcpServers': {}}
-
-if 'mcpServers' not in config:
-    config['mcpServers'] = {}
-
-config['mcpServers']['immich'] = json.loads('$IMMICH_BLOCK')
-
-with open(gf, 'w') as f:
-    json.dump(config, f, indent=2)
-    f.write('\n')
-
-print(f'Updated {gf} — immich entry merged successfully.')
-"
+  CLAUDE_CODE_CONFIG=~/.claude/mcp.json
+  if [ -f "$CLAUDE_CODE_CONFIG" ]; then
+    merge_immich_config "$CLAUDE_CODE_CONFIG"
   else
-    cat > "$GLOBAL_FILE" << MCPEOF
+    cat > "$CLAUDE_CODE_CONFIG" << MCPEOF
 {
   "mcpServers": {
     "immich": {
@@ -114,14 +121,47 @@ print(f'Updated {gf} — immich entry merged successfully.')
   }
 }
 MCPEOF
-    echo "Created $GLOBAL_FILE"
+    echo "  Created $CLAUDE_CODE_CONFIG"
   fi
+
+  # 2b. Claude Desktop config (macOS)
+  DESKTOP_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+  if [ -f "$DESKTOP_CONFIG" ]; then
+    merge_immich_config "$DESKTOP_CONFIG"
+  else
+    echo "  Claude Desktop config not found (skipping): $DESKTOP_CONFIG"
+  fi
+
+  # 2c. Claude Desktop config (Linux)
+  LINUX_DESKTOP="$HOME/.config/Claude/claude_desktop_config.json"
+  if [ -f "$LINUX_DESKTOP" ]; then
+    merge_immich_config "$LINUX_DESKTOP"
+  fi
+
+  echo ""
+  echo "Global installation complete."
 fi
+
+# ---- 3. Quick test ----
+echo ""
+echo "Testing connection to $IMMICH_URL..."
+PYTHONPATH="$SRC_DIR" "$PYTHON_PATH" -c "
+import httpx, sys
+try:
+    r = httpx.get('$IMMICH_URL/api/server/ping', headers={'x-api-key': '$IMMICH_KEY'}, timeout=10)
+    if r.status_code == 200:
+        print('  Connection OK! Server responded.')
+    else:
+        print(f'  WARNING: Server returned HTTP {r.status_code}')
+except Exception as e:
+    print(f'  WARNING: Could not reach server: {e}')
+"
 
 echo ""
 echo "=== Setup complete! ==="
 echo ""
 echo "Next steps:"
-echo "  1. Restart Claude Desktop or start a new Cowork session"
-echo "  2. Verify: ask Claude to 'use the immich ping tool'"
+echo "  1. Restart Claude Desktop (Cmd+Q then reopen)"
+echo "  2. Start a new Cowork session"
+echo "  3. Ask Claude: 'use the immich ping tool'"
 echo ""
