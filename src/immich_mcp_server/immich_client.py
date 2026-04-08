@@ -3,6 +3,7 @@ Immich REST API client.
 Wraps the Immich API endpoints needed for photo management.
 """
 
+import base64
 import os
 import httpx
 from typing import Any
@@ -190,6 +191,66 @@ class ImmichClient:
         return await self._request(
             "DELETE", f"/albums/{album_id}/assets", json={"ids": asset_ids}
         )
+
+    # ── Thumbnails ──────────────────────────────────────────
+
+    async def get_asset_thumbnail(
+        self, asset_id: str, size: str = "thumbnail"
+    ) -> dict:
+        """Get a base64-encoded thumbnail for an asset.
+
+        Args:
+            asset_id: The asset ID.
+            size: 'thumbnail' (250px) or 'preview' (1440px).
+
+        Returns:
+            dict with 'data' (base64 string) and 'type' (mime type).
+        """
+        url = f"{self.base_url}/api/assets/{asset_id}/{size}"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url, headers=self._headers)
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "image/webp")
+            b64 = base64.b64encode(response.content).decode("ascii")
+            return {"data": b64, "type": content_type}
+
+    async def get_album_thumbnails(
+        self, album_id: str, size: str = "thumbnail", limit: int = 50
+    ) -> dict:
+        """Get base64 thumbnails for all assets in an album (up to limit).
+
+        Args:
+            album_id: The album ID.
+            size: 'thumbnail' (250px) or 'preview' (1440px).
+            limit: Max number of thumbnails to fetch.
+
+        Returns:
+            dict with album info and list of thumbnail entries.
+        """
+        album = await self.get_album(album_id)
+        assets = album.get("assets", [])[:limit]
+        thumbnails = []
+        for asset in assets:
+            aid = asset["id"]
+            try:
+                thumb = await self.get_asset_thumbnail(aid, size)
+                thumbnails.append({
+                    "id": aid,
+                    "data": thumb["data"],
+                    "type": thumb["type"],
+                    "originalFileName": asset.get("originalFileName", ""),
+                    "fileCreatedAt": asset.get("fileCreatedAt", ""),
+                })
+            except Exception:
+                # Skip assets whose thumbnails can't be fetched
+                continue
+        return {
+            "albumId": album_id,
+            "albumName": album.get("albumName", ""),
+            "totalAssets": album.get("assetCount", 0),
+            "fetchedCount": len(thumbnails),
+            "thumbnails": thumbnails,
+        }
 
     # ── Shared Links ────────────────────────────────────────
 

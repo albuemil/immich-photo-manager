@@ -339,6 +339,42 @@ async def remove_assets_from_album(ctx: Context, album_id: str, asset_ids: list[
     return json.dumps({"album_id": album_id, "removed": len(asset_ids), "result": result}, default=str)
 
 
+# ── Thumbnails ──────────────────────────────────────────────
+
+
+@mcp.tool()
+async def get_asset_thumbnail(ctx: Context, asset_id: str, size: str = "thumbnail") -> str:
+    """Get a base64-encoded thumbnail for a single asset.
+    Returns JSON with 'data' (base64 string) and 'type' (mime type).
+    Size can be 'thumbnail' (250px, fast) or 'preview' (1440px, larger).
+
+    Args:
+        asset_id: The unique ID of the asset.
+        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
+    """
+    result = await _client(ctx).get_asset_thumbnail(asset_id, size)
+    return json.dumps(result)
+
+
+@mcp.tool()
+async def get_album_thumbnails(
+    ctx: Context, album_id: str, size: str = "thumbnail", limit: int = 20
+) -> str:
+    """Get base64-encoded thumbnails for all photos in an album (up to limit).
+    Returns album info and a list of thumbnail entries with asset IDs, base64 data,
+    filenames, and dates. Used for generating visual HTML galleries.
+
+    Args:
+        album_id: The album's unique ID.
+        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
+        limit: Maximum number of thumbnails to fetch (default 20, max 50).
+    """
+    result = await _client(ctx).get_album_thumbnails(
+        album_id, size, min(limit, 50)
+    )
+    return json.dumps(result, default=str)
+
+
 # ── Shared Links ────────────────────────────────────────────
 
 
