@@ -375,6 +375,26 @@ async def get_album_thumbnails(
     return json.dumps(result, default=str)
 
 
+@mcp.tool()
+async def get_thumbnails_batch(
+    ctx: Context, asset_ids: list[str], size: str = "thumbnail", limit: int = 20
+) -> str:
+    """Get base64-encoded thumbnails for a list of asset IDs WITHOUT needing an album.
+    Use this when you have search results (asset IDs) and want to display them visually
+    without creating a temporary album. Returns thumbnail entries with asset IDs, base64 data,
+    filenames, and dates.
+
+    Args:
+        asset_ids: List of asset IDs to fetch thumbnails for.
+        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
+        limit: Maximum number of thumbnails to fetch (default 20, max 50).
+    """
+    result = await _client(ctx).get_thumbnails_batch(
+        asset_ids, size, min(limit, 50)
+    )
+    return json.dumps(result, default=str)
+
+
 # ── Shared Links ────────────────────────────────────────────
 
 

@@ -252,6 +252,47 @@ class ImmichClient:
             "thumbnails": thumbnails,
         }
 
+    async def get_thumbnails_batch(
+        self, asset_ids: list[str], size: str = "thumbnail", limit: int = 50
+    ) -> dict:
+        """Get base64 thumbnails for a list of asset IDs (no album required).
+
+        Args:
+            asset_ids: List of asset IDs to fetch thumbnails for.
+            size: 'thumbnail' (250px) or 'preview' (1440px).
+            limit: Max number of thumbnails to fetch.
+
+        Returns:
+            dict with list of thumbnail entries.
+        """
+        ids_to_fetch = asset_ids[:limit]
+        thumbnails = []
+        for aid in ids_to_fetch:
+            try:
+                thumb = await self.get_asset_thumbnail(aid, size)
+                # Try to get basic asset info for filename/date
+                try:
+                    asset_info = await self.get_asset(aid)
+                    original_name = asset_info.get("originalFileName", "")
+                    created_at = asset_info.get("fileCreatedAt", "")
+                except Exception:
+                    original_name = ""
+                    created_at = ""
+                thumbnails.append({
+                    "id": aid,
+                    "data": thumb["data"],
+                    "type": thumb["type"],
+                    "originalFileName": original_name,
+                    "fileCreatedAt": created_at,
+                })
+            except Exception:
+                continue
+        return {
+            "totalRequested": len(ids_to_fetch),
+            "fetchedCount": len(thumbnails),
+            "thumbnails": thumbnails,
+        }
+
     # ── Shared Links ────────────────────────────────────────
 
     async def list_shared_links(self) -> list[dict]:

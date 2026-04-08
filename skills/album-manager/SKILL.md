@@ -214,12 +214,12 @@ Each album object needs: `id` (string), `name` (string), `total` (integer).
 
 ### Generation Workflow
 
-1. **Get album data**: Call `immich_get_album` to get the album ID, name, and asset list
-2. **Get thumbnails**: For each asset (up to a reasonable batch, e.g. 20-50), call `immich_get_asset_thumbnail` to get base64 thumbnails
+1. **Get album data**: Call `get_album` to get the album ID, name, and asset list
+2. **Get thumbnails**: Call `get_album_thumbnails(album_id, limit=20)` — response overflows to temp file (this is normal)
 3. **Read the template**: Read `assets/viewer-template.html` from the plugin root
 4. **Replace placeholders**: Fill in all `{{...}}` placeholders with actual data
 5. **Write the HTML**: Save to the outputs directory as `<album-name-slug>.html`
-6. **Present to user**: Share the file link
+6. **Present to user**: Share the file link via `computer://`
 
 ### ⚠️ Placeholder Rules (IMPORTANT)
 
@@ -228,33 +228,38 @@ Each album object needs: `id` (string), `name` (string), `total` (integer).
 - **`{{PHOTO_ENTRIES}}`**: Must be valid JS object literals, comma-separated.
 - **`{{ALBUMS_JSON}}`**: Must be a valid JS array literal.
 
+### CRITICAL: Related Albums = REAL Albums Only
+
+**The `{{ALBUMS_JSON}}` placeholder must ONLY contain real, user-created albums.** Never fabricate album entries. Never create temporary albums to populate this field.
+
+When generating a gallery for an album, find OTHER real albums that are related (e.g., same country, same trip) and list them as Related Albums. If there are no related albums, use `[]`.
+
 ### Performance Notes
 
 - **PAGE_SIZE**: Keep at 6 for initial load, the rest lazy-loads
-- **PHOTO_COUNT (TOTAL)**: This is the number of photos embedded in the HTML. Keep reasonable (20-50) for file size. The gallery shows `ALBUM_TOTAL` as the full count but only embeds `TOTAL` thumbnails.
+- **PHOTO_COUNT**: Number of photos embedded in the HTML. Keep at 20-50 for file size.
 - **Thumbnails**: Use the smallest available thumbnail size. Base64 WebP is preferred.
-- For very large albums (100+), embed only the first 20-50 photos. The gallery's "Load more" button will show them progressively.
+- For very large albums (100+), embed only the first 20-50 photos.
 
 ### Example: Generating a gallery
 
 ```
 User: "Show me photos from Lanzarote Verde"
 
-1. immich_list_albums() → find "Lanzarote Verde" album
-2. immich_get_album(album_id) → get asset list (273 photos)
-3. For first 20 assets: immich_get_asset_thumbnail(asset_id) → base64 thumbnails
-4. Read assets/viewer-template.html
-5. Replace:
-   - {{ALBUM_NAME}} → "Lanzarote Verde"
-   - {{ALBUM_TOTAL}} → "273"
-   - {{SEARCH_QUERY}} → "&ldquo;show me photos from Lanzarote Verde&rdquo;"
-   - {{IMMICH_URL}} → "https://fotos.txeo.club"
-   - {{PAGE_SIZE}} → "6"
-   - {{PHOTO_COUNT}} → "20"
-   - {{PHOTO_ENTRIES}} → actual photo entries
-   - {{ALBUMS_JSON}} → {id:"...",name:"Lanzarote Verde",total:273}
-6. Save as lanzarote-verde.html
-7. Present link to user
+1. list_albums() -> find "Lanzarote Verde" album (id: abc123, 273 photos)
+2. get_album_thumbnails(album_id="abc123", limit=20) -> [overflows to temp file]
+3. Python reads temp file + reads assets/viewer-template.html
+4. Replace:
+   - {{ALBUM_NAME}} -> "Lanzarote Verde"
+   - {{ALBUM_TOTAL}} -> 273
+   - {{SEARCH_QUERY}} -> "Lanzarote Verde"
+   - {{IMMICH_URL}} -> "https://fotos.txeo.club"
+   - {{PAGE_SIZE}} -> 6
+   - {{PHOTO_COUNT}} -> 20
+   - {{PHOTO_ENTRIES}} -> actual photo entries from temp file
+   - {{ALBUMS_JSON}} -> [{"id":"abc123","name":"Lanzarote Verde","total":273}]
+5. Save as lanzarote-verde.html
+6. Present computer:// link
 ```
 
 ## Reference Files
