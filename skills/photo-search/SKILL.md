@@ -7,7 +7,7 @@ description: >
   "where are my photos of", "do I have photos of", "find all screenshots",
   "photos taken with", "photos from 2019", "photos near", "photos of [person]",
   or any variation of searching, browsing, or exploring their photo library.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Photo Search
@@ -148,9 +148,13 @@ Use the canonical template at `assets/viewer-template.html`. Read the template f
   - A JSON array: `[{"id":"abc","name":"X","total":50}]`
   - Empty string (no albums): the template produces `[].flat()` → `[]` and hides the section
 
-### Photo Entry Format (base64 embedded thumbnails)
+### Thumbnail Delivery Strategies
 
-The Cowork viewer runs in an `about:` protocol sandbox that blocks ALL external network requests (fetch, img src, etc.). Thumbnails MUST be embedded as base64 `data:` URIs.
+There are three strategies for delivering thumbnails to the gallery viewer, with different trade-offs. The strategy used depends on the user's Immich setup and the viewing context.
+
+#### Strategy 1: Base64 Embedded (Default — Always Works)
+
+The Cowork viewer runs in an `about:` protocol sandbox that blocks ALL external network requests (`fetch`, `<img src>`, etc.). Therefore, the **default and always-safe strategy** is to embed thumbnails as base64 `data:` URIs directly in the HTML.
 
 Each photo entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
@@ -167,7 +171,52 @@ Each photo entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
 **How to get thumbnails:** Call `get_thumbnails_batch(asset_ids=[...], size="thumbnail", limit=50)`. If more than 50 photos, call in batches of 50.
 
-**Template lazy loading:** The first page (PAGE_SIZE photos) loads immediately. Subsequent pages use IntersectionObserver to set `src` from `dataset.src` only when scrolled into view. Pagination is manual via "Load more" button (no infinite scroll).
+**Limitations:** HTML file size grows linearly with photo count (~18KB per photo). Not ideal for albums with hundreds of photos. Maximum practical limit is ~50 thumbnails per gallery file.
+
+#### Strategy 2: Shared Links (Best for Albums)
+
+When photos come from an **existing real album** (Path A), Immich shared links provide URL-based thumbnail delivery without authentication headers. Shared links generate public URLs with an embedded key that work in `<img src>` tags from any origin — no CORS issues.
+
+**How it works:**
+1. Call `create_shared_link(album_id=...)` to generate a shared link for the album
+2. The shared link URL follows the pattern: `https://<immich-url>/share/<shared-key>`
+3. Thumbnails are accessible at: `https://<immich-url>/api/assets/<asset-id>/thumbnail?key=<shared-key>`
+4. Use these URLs as the `src` in photo entries instead of base64
+
+**Advantages:** Tiny HTML file (just URLs), pagination works naturally with lazy loading, the browser fetches thumbnails on demand, supports albums with hundreds/thousands of photos.
+
+**Limitations:** Only works for photos in real albums (not arbitrary search results). Requires the Immich server to be reachable from the user's browser. Creates a shared link on the server (the user should be informed).
+
+**Photo entry format with shared links:**
+```javascript
+{src:'https://fotos.example.com/api/assets/<id>/thumbnail?key=<shared-key>',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
+```
+
+#### Strategy 3: CORS-Enabled Direct URLs (Ideal — Requires User Setup)
+
+If the user has configured CORS headers on their Immich reverse proxy, the gallery HTML can use JavaScript `fetch()` with the `x-api-key` header to load thumbnails on demand, converting responses to blob URLs. This enables full URL-based delivery for **any** photos, not just albums.
+
+**This requires the user to configure their reverse proxy** (Nginx, Caddy, Traefik, etc.) to return CORS headers. See the **Post-Install: CORS Configuration** section in `/setup-immich-photo-manager` for instructions.
+
+**Advantages:** Works for any photos (albums or search results), tiny HTML file, true on-demand pagination, no shared links needed.
+
+**Limitations:** Requires CORS configuration on the server side. Not available out of the box.
+
+#### Strategy Decision Flow
+
+```
+Is this a real album (Path A)?
+  ├─ YES → Use Strategy 2 (Shared Links) — best UX, URL-based pagination
+  └─ NO (orphan photos, Path B)
+       ├─ ≤50 photos → Use Strategy 1 (Base64) — always works
+       └─ >50 photos → Use Strategy 1 in batches of 50, warn user about file size
+```
+
+**Note:** Strategy 3 (CORS) is an opt-in enhancement. When the documentation references it, present it as a "recommended post-install step" for power users who want the best experience.
+
+### Template lazy loading
+
+The first page (PAGE_SIZE photos) loads immediately. Subsequent pages use IntersectionObserver to set `src` from `dataset.src` only when scrolled into view. Pagination is manual via "Load more" button (no infinite scroll). This works with both base64 and URL-based strategies.
 
 ### Albums JSON Format
 
@@ -188,21 +237,20 @@ User: "show me photos of Tikal"
 2. search_metadata(state="Petén", country="Guatemala") -> found 200+ assets
 3. list_albums() -> scan names -> found "Tikal & Petén" (id: d6dd63d0, 169 photos), "Guatemala" (id: 8dde4bb1, 392 photos)
 4. get_album(album_id="d6dd63d0") -> get asset list with IDs, names, dates
-5. Read assets/viewer-template.html
-6. Replace placeholders:
+5. create_shared_link(album_id="d6dd63d0") -> shared key for URL-based thumbnails
+6. Read assets/viewer-template.html
+7. Replace placeholders:
    - {{ALBUM_NAME}} -> "Tikal & Petén"
    - {{ALBUM_TOTAL}} -> 169
    - {{SEARCH_QUERY}} -> "Tikal"
    - {{IMMICH_URL}} -> "https://fotos.txeo.club"
    - {{PAGE_SIZE}} -> 20
-   - {{PHOTO_COUNT}} -> 50 (limit to 50 for reasonable file size)
-   - {{PHOTO_ENTRIES}} -> {src:'data:image/jpeg;base64,...',id:"abc",name:"IMG_001",date:"2023-06-15"},{src:'data:...',id:"def",...}
+   - {{PHOTO_COUNT}} -> 169 (all photos, since URLs are lightweight)
+   - {{PHOTO_ENTRIES}} -> {src:'https://fotos.txeo.club/api/assets/<id>/thumbnail?key=<shared-key>',id:"abc",name:"IMG_001",date:"2023-06-15"}, ...
    - {{ALBUMS_JSON}} -> {"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}
-7. Write tikal.html to outputs (~10KB)
-8. Present computer:// link
+8. Write tikal.html to outputs (~15KB regardless of photo count)
+9. Present computer:// link
 ```
-
-**Note:** `get_thumbnails_batch` is REQUIRED to embed base64 thumbnails. Use `size="thumbnail"` (250px). The Cowork sandbox blocks all external requests, so base64 is the only way to show images.
 
 ### When photos are NOT in any album
 
