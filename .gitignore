@@ -2,6 +2,7 @@
 *.plugin
 .env
 .mcp.json
+.mcpb-cache/
 node_modules/
 __pycache__/
 immich-mcp-server
