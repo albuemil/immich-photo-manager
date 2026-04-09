@@ -42,26 +42,25 @@ class ImmichClient:
         """Find the writable .mcpb-cache directory.
 
         Resolution order:
-        1. IMMICH_CACHE_DIR env var (set in mcp.json)
+        1. IMMICH_CACHE_DIR env var (set in mcp.json) — accepted even if
+           the directory doesn't exist yet (save_config will create it).
         2. Relative to this module: ../../.mcpb-cache/
         """
         if cls._cache_dir is not None:
             return cls._cache_dir
 
-        # 1. Explicit env var
+        # 1. Explicit env var (accept path even if dir doesn't exist yet)
         env_dir = os.environ.get("IMMICH_CACHE_DIR", "")
-        if env_dir and os.path.isdir(env_dir):
+        if env_dir:
             cls._cache_dir = os.path.realpath(env_dir)
             return cls._cache_dir
 
         # 2. Relative to module: src/immich_mcp_server/ -> ../../.mcpb-cache/
         module_dir = Path(__file__).resolve().parent
         cache_candidate = module_dir / ".." / ".." / ".mcpb-cache"
-        if cache_candidate.is_dir():
-            cls._cache_dir = str(cache_candidate.resolve())
-            return cls._cache_dir
-
-        return None
+        # Accept even if it doesn't exist yet
+        cls._cache_dir = str(cache_candidate.resolve())
+        return cls._cache_dir
 
     @classmethod
     def _config_path(cls) -> str | None:
@@ -87,14 +86,18 @@ class ImmichClient:
     def save_config(cls, base_url: str, api_key: str) -> str:
         """Save credentials to the writable cache dir.
 
-        Returns the path written, or raises if no writable dir found.
+        Creates the directory if it doesn't exist.
+        Returns the path written, or raises if it cannot be created.
         """
         config_path = cls._config_path()
         if not config_path:
             raise RuntimeError(
-                "No writable cache directory found (.mcpb-cache). "
+                "No cache directory path could be determined. "
                 "Cannot persist credentials."
             )
+        # Create the cache directory if it doesn't exist
+        cache_dir = os.path.dirname(config_path)
+        os.makedirs(cache_dir, exist_ok=True)
         config = {"base_url": base_url, "api_key": api_key}
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
