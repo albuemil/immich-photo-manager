@@ -11,33 +11,26 @@ git status --short
 echo ""
 echo "Committing changes..."
 git add -A
-git commit -m "fix: revert to base64 thumbnails + fix lazy loading & pagination
+git commit -m "fix: base64 thumbnails, lazy loading, pagination, rename setup command
 
-Cowork sandbox discovery:
-- Cowork viewer runs at about: protocol with origin: null
-- ALL external network requests are blocked (fetch, img src, etc.)
+Cowork sandbox:
+- Viewer runs at about: protocol, blocks ALL external requests
 - Only data: URIs (base64) work for images
-- URL-based approach (fetch + x-api-key) does NOT work in Cowork
 
-Template changes (viewer-template.html):
+Template (viewer-template.html):
 - Reverted from URL-based to base64 embedded thumbnails
-- Removed fetchThumb(), thumbUrl(), thumbCache, API_KEY constant
-- showGal() reverted from async/fetchThumb to sync/img.src
-- loadPage(): first page loads images immediately (src=img.src),
-  subsequent pages use lazy loading (dataset.src + IntersectionObserver)
-- Disabled infinite scroll (was auto-loading all pages at once)
-- Pagination is now manual via Load more button only
-- Album covers use coverSrc (base64) instead of fetchThumb(coverId)
+- Removed fetchThumb(), thumbUrl(), thumbCache, API_KEY
+- loadPage(): first page immediate, rest lazy (IntersectionObserver)
+- Disabled infinite scroll, manual Load more button only
+- Force detail view on load (prevents gallery loading all pages)
+- Album covers use coverSrc (base64)
 - Labels show img.name instead of generic Photo N
-- Kept all previous hardening: parseInt wrappers, document.title
-  for alt-text, ALBUMS_JSON .flat() pattern
 
-SKILL.md updates (photo-search + album-manager):
-- Documented base64 approach: get_thumbnails_batch is REQUIRED
-- Always use size=thumbnail (250px, ~18KB avg)
-- Limit galleries to ~50 photos (~0.9MB HTML)
-- Removed all references to fetch(), API_KEY, URL-based loading
-- Updated generation workflow to include thumbnail fetch step"
+SKILL.md (all 11 skills + 4 commands):
+- Documented base64 approach with get_thumbnails_batch
+- size=thumbnail (250px, ~18KB avg), limit ~50 photos
+- Renamed /setup to /setup-immich-photo-manager to avoid
+  collision with other plugins"
 
 echo ""
 echo "Pushing to remote..."

@@ -1,5 +1,5 @@
 ---
-name: setup
+name: setup-immich-photo-manager
 description: First-time setup — configure your Immich MCP server connection and verify everything works
 ---
 
