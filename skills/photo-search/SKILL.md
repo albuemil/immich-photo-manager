@@ -78,17 +78,19 @@ Matching rules:
 - The query terms can appear anywhere in the album name (e.g., "Tikal" matches "Tikal & Petén")
 - Include albums for broader regions if relevant (e.g., for "Tikal" also include "Guatemala")
 
-### Step 4: Get thumbnails
+### Step 4: Collect asset metadata for the gallery
 
 **Two paths depending on whether a real album was found:**
 
 #### Path A — Real album found (preferred)
-Use `get_album_thumbnails(album_id, limit=20)` to get thumbnails from the real album.
+Use `get_album(album_id)` to get the full asset list. Extract `id`, `originalFileName`, and `fileCreatedAt` from each asset.
 This is the best path because the user curated these albums intentionally.
 
 #### Path B — No matching album (orphan photos)
-Use `get_thumbnails_batch(asset_ids, limit=20)` to get thumbnails directly from the search result asset IDs.
+Use the search results directly — they already contain `id`, `originalFileName`, and `fileCreatedAt` for each asset.
 **Do NOT create an album. Just show the photos.**
+
+**Fetch thumbnails as base64** using `get_thumbnails_batch(asset_ids=[...], size="thumbnail", limit=50)`. The Cowork viewer runs in an `about:` sandbox that blocks ALL external network requests, so thumbnails MUST be embedded as base64 `data:` URIs.
 
 ### Step 5: Build and present the HTML gallery
 
@@ -146,24 +148,26 @@ Use the canonical template at `assets/viewer-template.html`. Read the template f
   - A JSON array: `[{"id":"abc","name":"X","total":50}]`
   - Empty string (no albums): the template produces `[].flat()` → `[]` and hides the section
 
-### Thumbnail Pipeline (How Overflow Works)
+### Photo Entry Format (base64 embedded thumbnails)
 
-Thumbnail data (base64 WebP) always exceeds the Cowork context window limit. **This is expected and by design.** Cowork saves the response to a temp file automatically. The pipeline:
+The Cowork viewer runs in an `about:` protocol sandbox that blocks ALL external network requests (fetch, img src, etc.). Thumbnails MUST be embedded as base64 `data:` URIs.
 
-1. Call `get_album_thumbnails` or `get_thumbnails_batch` -> response overflows to temp file (this is normal)
-2. Extract the file path from the overflow message
-3. Use Python to read the temp file, parse the JSON, build the HTML with embedded images
-4. Write HTML to outputs folder, share via `computer://` link
-
-**Cost: ~580 tokens per request regardless of photo count.** The base64 never enters context.
-
-### Photo Entry Format
-
-Each photo entry in `{{PHOTO_ENTRIES}}`:
+Each photo entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
 ```javascript
-{id:"<asset-id>",src:"data:image/webp;base64,<thumbnail-base64>",date:"<ISO-date>"}
+{src:'data:image/jpeg;base64,/9j/4AAQ...',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
 ```
+
+- `src`: Base64 data URI of the thumbnail (from `get_thumbnails_batch`, size=thumbnail, ~250px, ~15-25KB each)
+- `id`: The Immich asset ID (for linking to Immich web UI)
+- `name`: Original filename (displayed as label)
+- `date`: ISO date string from the asset metadata
+
+**Always use `size="thumbnail"` (250px)** — never `preview` (1440px). Thumbnails average ~18KB each, so 50 photos ≈ 0.9MB HTML file.
+
+**How to get thumbnails:** Call `get_thumbnails_batch(asset_ids=[...], size="thumbnail", limit=50)`. If more than 50 photos, call in batches of 50.
+
+**Template lazy loading:** The first page (PAGE_SIZE photos) loads immediately. Subsequent pages use IntersectionObserver to set `src` from `dataset.src` only when scrolled into view. Pagination is manual via "Load more" button (no infinite scroll).
 
 ### Albums JSON Format
 
@@ -183,20 +187,22 @@ User: "show me photos of Tikal"
 1. ping() -> OK
 2. search_metadata(state="Petén", country="Guatemala") -> found 200+ assets
 3. list_albums() -> scan names -> found "Tikal & Petén" (id: d6dd63d0, 169 photos), "Guatemala" (id: 8dde4bb1, 392 photos)
-4. get_album_thumbnails(album_id="d6dd63d0", limit=20) -> [overflows to temp file]
-5. Python reads temp file, reads assets/viewer-template.html
+4. get_album(album_id="d6dd63d0") -> get asset list with IDs, names, dates
+5. Read assets/viewer-template.html
 6. Replace placeholders:
    - {{ALBUM_NAME}} -> "Tikal & Petén"
    - {{ALBUM_TOTAL}} -> 169
    - {{SEARCH_QUERY}} -> "Tikal"
    - {{IMMICH_URL}} -> "https://fotos.txeo.club"
-   - {{PAGE_SIZE}} -> 6
-   - {{PHOTO_COUNT}} -> 20
-   - {{PHOTO_ENTRIES}} -> actual photo entries from temp file
+   - {{PAGE_SIZE}} -> 20
+   - {{PHOTO_COUNT}} -> 50 (limit to 50 for reasonable file size)
+   - {{PHOTO_ENTRIES}} -> {src:'data:image/jpeg;base64,...',id:"abc",name:"IMG_001",date:"2023-06-15"},{src:'data:...',id:"def",...}
    - {{ALBUMS_JSON}} -> {"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}
-7. Write tikal.html to outputs
+7. Write tikal.html to outputs (~10KB)
 8. Present computer:// link
 ```
+
+**Note:** `get_thumbnails_batch` is REQUIRED to embed base64 thumbnails. Use `size="thumbnail"` (250px). The Cowork sandbox blocks all external requests, so base64 is the only way to show images.
 
 ### When photos are NOT in any album
 
@@ -204,16 +210,17 @@ User: "show me photos of Tikal"
 User: "show me sunset photos"
 
 1. ping() -> OK
-2. search_smart(query="sunset") -> found 35 assets
+2. search_smart(query="sunset") -> found 35 assets (each has id, originalFileName, fileCreatedAt)
 3. list_albums() -> no album name matches "sunset"
-4. get_thumbnails_batch(asset_ids=[...first 20 IDs...]) -> [overflows to temp file]
-5. Python reads temp file, reads template
-6. Replace placeholders:
+4. Read template
+5. Replace placeholders:
    - {{ALBUM_NAME}} -> "Sunset Photos"
    - {{ALBUM_TOTAL}} -> 35
+   - {{PHOTO_COUNT}} -> 35
+   - {{PHOTO_ENTRIES}} -> entries built from get_thumbnails_batch (base64 src + id + name + date)
    - {{ALBUMS_JSON}} ->     <-- empty string, no real albums match
-7. Write sunset-photos.html to outputs
-8. Present computer:// link
+6. Write sunset-photos.html to outputs (~0.7MB with base64 thumbnails)
+7. Present computer:// link
 ```
 
 ---

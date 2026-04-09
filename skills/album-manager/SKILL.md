@@ -168,7 +168,7 @@ Use the gallery template at `assets/viewer-template.html` (from the plugin root)
 - **Full-screen gallery overlay** with keyboard navigation (arrows, Escape, Space for slideshow)
 - **Touch/swipe gestures** for mobile
 - **Lazy loading** with intersection observers
-- **Infinite scroll** with "Load more" button
+- **Manual pagination** with "Load more" button (no infinite scroll)
 - **Slideshow mode** with progress bar
 - **Polaroid-style album cards** linking back to Immich
 - **Responsive design** for all screen sizes
@@ -183,22 +183,27 @@ The template uses these placeholders that MUST be replaced:
 | `{{ALBUM_TOTAL}}` | Total number of photos in the album | `273` |
 | `{{SEARCH_QUERY}}` | The query or description used to find photos | `&ldquo;green landscapes in Lanzarote&rdquo;` |
 | `{{IMMICH_URL}}` | Immich server base URL | `https://fotos.txeo.club` |
-| `{{PAGE_SIZE}}` | Number of photos per lazy-load page | `6` |
-| `{{PHOTO_COUNT}}` | Number of photos included in the HTML (may be less than ALBUM_TOTAL for performance) | `20` |
+| `{{PAGE_SIZE}}` | Number of photos per lazy-load page | `20` |
+| `{{PHOTO_COUNT}}` | Total photos in the gallery (limit ~50 for file size) | `50` |
 | `{{PHOTO_ENTRIES}}` | The photo data entries (see format below) | See below |
 | `{{ALBUMS_JSON}}` | JSON array of album links | See below |
 
-### Photo Entry Format
+### Photo Entry Format (base64 embedded thumbnails)
 
-Each photo entry in `{{PHOTO_ENTRIES}}` is a JS object:
+The Cowork viewer runs in an `about:` protocol sandbox that blocks ALL external network requests. Thumbnails MUST be embedded as base64 `data:` URIs.
+
+Each entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
 ```javascript
-{id:"<asset-id>",src:"data:image/webp;base64,<thumbnail-base64>",date:"<ISO-date>"}
+{src:'data:image/jpeg;base64,/9j/4AAQ...',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
 ```
 
-- `id`: The Immich asset ID (used for linking to the full photo in Immich)
-- `src`: Base64-encoded WebP thumbnail from `immich_get_asset_thumbnail`
-- `date`: ISO date string from the asset metadata (optional, used in list view)
+- `src`: Base64 data URI of the thumbnail (from `get_thumbnails_batch`, size=thumbnail, ~250px, ~15-25KB each)
+- `id`: The Immich asset ID (for linking to Immich web UI)
+- `name`: Original filename (displayed as label)
+- `date`: ISO date string from the asset metadata
+
+**Always use `size="thumbnail"` (250px)** — never `preview` (1440px). Thumbnails average ~18KB each, so 50 photos ≈ 0.9MB HTML file.
 
 Entries are comma-separated, one per line.
 
@@ -214,12 +219,15 @@ Each album object needs: `id` (string), `name` (string), `total` (integer).
 
 ### Generation Workflow
 
-1. **Get album data**: Call `get_album` to get the album ID, name, and asset list
-2. **Get thumbnails**: Call `get_album_thumbnails(album_id, limit=20)` — response overflows to temp file (this is normal)
+1. **Get album data**: Call `get_album` to get the album ID, name, and full asset list (IDs, filenames, dates)
+2. **Fetch thumbnails**: Call `get_thumbnails_batch(asset_ids=[...], size="thumbnail", limit=50)` — call in batches of 50 if needed
 3. **Read the template**: Read `assets/viewer-template.html` from the plugin root
-4. **Replace placeholders**: Fill in all `{{...}}` placeholders with actual data
-5. **Write the HTML**: Save to the outputs directory as `<album-name-slug>.html`
-6. **Present to user**: Share the file link via `computer://`
+4. **Replace placeholders**: Fill in all `{{...}}` placeholders
+5. **Build `{{PHOTO_ENTRIES}}`**: `{src:'data:...',id:'...',name:'...',date:'...'}` for each asset with base64 thumbnail
+6. **Write the HTML**: Save to the outputs directory as `<album-name-slug>.html` (~0.9MB for 50 photos)
+7. **Present to user**: Share the file link via `computer://`
+
+**`get_thumbnails_batch` is REQUIRED.** The Cowork sandbox blocks all external requests — base64 is the only way.
 
 ### ⚠️ Placeholder Rules (IMPORTANT)
 
@@ -236,10 +244,10 @@ When generating a gallery for an album, find OTHER real albums that are related 
 
 ### Performance Notes
 
-- **PAGE_SIZE**: Keep at 6 for initial load, the rest lazy-loads
-- **PHOTO_COUNT**: Number of photos embedded in the HTML. Keep at 20-50 for file size.
-- **Thumbnails**: Use the smallest available thumbnail size. Base64 WebP is preferred.
-- For very large albums (100+), embed only the first 20-50 photos.
+- **PAGE_SIZE**: Keep at 20 for initial load. Pagination is manual ("Load more" button)
+- **PHOTO_COUNT**: Limit to ~50 photos per gallery for reasonable file size (~0.9MB)
+- **Thumbnails**: Embedded as base64 via `get_thumbnails_batch(size="thumbnail")` — ~18KB avg each
+- For albums with 100+ photos, show first 50 and tell the user the total count
 
 ### Example: Generating a gallery
 
@@ -247,18 +255,18 @@ When generating a gallery for an album, find OTHER real albums that are related 
 User: "Show me photos from Lanzarote Verde"
 
 1. list_albums() -> find "Lanzarote Verde" album (id: abc123, 273 photos)
-2. get_album_thumbnails(album_id="abc123", limit=20) -> [overflows to temp file]
-3. Python reads temp file + reads assets/viewer-template.html
+2. get_album(album_id="abc123") -> get full asset list with IDs, names, dates
+3. Read assets/viewer-template.html
 4. Replace:
    - {{ALBUM_NAME}} -> "Lanzarote Verde"
    - {{ALBUM_TOTAL}} -> 273
    - {{SEARCH_QUERY}} -> "Lanzarote Verde"
    - {{IMMICH_URL}} -> "https://fotos.txeo.club"
-   - {{PAGE_SIZE}} -> 6
-   - {{PHOTO_COUNT}} -> 20
-   - {{PHOTO_ENTRIES}} -> actual photo entries from temp file
+   - {{PAGE_SIZE}} -> 20
+   - {{PHOTO_COUNT}} -> 50 (first 50 of 273)
+   - {{PHOTO_ENTRIES}} -> {src:'data:image/jpeg;base64,...',id:"abc",name:"IMG_001",date:"2023-06-15"},{src:'data:...',id:"def",...}
    - {{ALBUMS_JSON}} -> {"id":"abc123","name":"Lanzarote Verde","total":273}
-5. Save as lanzarote-verde.html
+5. Save as lanzarote-verde.html (~0.9MB)
 6. Present computer:// link
 ```
 

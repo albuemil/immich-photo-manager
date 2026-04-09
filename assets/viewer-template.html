@@ -403,7 +403,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 </div>
 
 <script>
-const IMMICH="{{IMMICH_URL}}",PAGE_SIZE=parseInt("{{PAGE_SIZE}}")||6,TOTAL=parseInt("{{PHOTO_COUNT}}")||0,ALBUM_TOTAL=parseInt("{{ALBUM_TOTAL}}")||0;
+const IMMICH="{{IMMICH_URL}}",PAGE_SIZE=parseInt("{{PAGE_SIZE}}")||20,TOTAL=parseInt("{{PHOTO_COUNT}}")||0,ALBUM_TOTAL=parseInt("{{ALBUM_TOTAL}}")||0;
 const ALL=[
 {{PHOTO_ENTRIES}}
 ];
@@ -430,7 +430,8 @@ function setView(v){
   localStorage.setItem('ipm-view',v);
   document.querySelectorAll('#viewPill button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
 }
-setView(localStorage.getItem('ipm-view')||'detail');
+/* Force detail view on load — prevents gallery mode from loading all pages at once */
+setView('detail');
 
 /* ── Gallery ── */
 const galOverlay=$('gal'),galImg=$('galImg'),galCtr=$('galCtr'),galLink=$('galLink'),galPlay=$('galPlay'),galProgress=$('galProgress'),galHints=$('galHints');
@@ -499,35 +500,34 @@ function updateCtr(n){shownEl.textContent=n;ctr.textContent=n+'/'+TOTAL;if(n>=TO
 /* ── Load page ── */
 function loadPage(){
   const s=page*PAGE_SIZE,e=Math.min(s+PAGE_SIZE,TOTAL);
+  const isFirstPage=(page===0);
   for(let i=s;i<e;i++){
     const img=ALL[i];
     const card=document.createElement('div');card.className='card skeleton';
     const a=document.createElement('a');a.href=IMMICH+'/photos/'+img.id;a.target='_blank';a.rel='noopener';
     const idx=i;card.addEventListener('dblclick',ev=>{ev.preventDefault();openGal(idx)});
-    const el=document.createElement('img');el.alt=(document.title.split(' \u2014')[0]||'Photo')+' \u2014 '+(i+1);el.dataset.src=img.src;
+    const el=document.createElement('img');el.alt=(document.title.split(' \u2014')[0]||'Photo')+' \u2014 '+(i+1);
+    if(isFirstPage){el.src=img.src}else{el.dataset.src=img.src}
     el.addEventListener('load',function(){this.classList.add('loaded');card.classList.remove('skeleton')});
     const meta=document.createElement('div');meta.className='card-meta';
-    const label=document.createElement('span');label.className='card-label';label.textContent='Photo '+(i+1);
+    const label=document.createElement('span');label.className='card-label';label.textContent=img.name||('Photo '+(i+1));
     const date=document.createElement('span');date.className='card-date';
     date.textContent=img.date?new Date(img.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
     meta.appendChild(label);meta.appendChild(date);
     const badge=document.createElement('div');badge.className='badge';badge.textContent=(i+1)+'/'+TOTAL;
     a.appendChild(el);a.appendChild(meta);card.appendChild(a);card.appendChild(badge);grid.appendChild(card);
-    lazyObs.observe(el);
+    if(!isFirstPage)lazyObs.observe(el);
   }
   page++;updateCtr(Math.min(page*PAGE_SIZE,TOTAL));
   if(page*PAGE_SIZE>=TOTAL){loadBtn.disabled=true;loadBtn.textContent='All photos loaded'}
 }
 
-/* Lazy load */
+/* Lazy load — moves data-src to src when scrolled into view */
 const lazyObs=new IntersectionObserver(entries=>{
   entries.forEach(en=>{if(en.isIntersecting){const i=en.target;if(i.dataset.src){i.src=i.dataset.src;delete i.dataset.src}lazyObs.unobserve(i)}})
 },{rootMargin:'250px'});
 
-/* Infinite scroll */
-new IntersectionObserver(entries=>{
-  if(entries[0].isIntersecting&&page*PAGE_SIZE<TOTAL)loadPage()
-},{rootMargin:'500px'}).observe($('sentinel'));
+/* Pagination — manual "Load more" button only (no infinite scroll) */
 
 /* Back to top */
 window.addEventListener('scroll',()=>{
@@ -550,11 +550,16 @@ const ALBUMS = (function(){try{return [{{ALBUMS_JSON}}].flat()}catch(e){return[]
     card.target='_blank';
     card.rel='noopener';
     card.title='View '+a.name+' in Immich';
-    const coverSrc=ALL.length>0?ALL[Math.min(i,ALL.length-1)].src:'';
     card.innerHTML=
-      '<div class="polaroid-stack"><div class="polaroid"><img src="'+coverSrc+'" alt="'+a.name+'"><span class="polaroid-label">'+a.name+'</span></div></div>'+
+      '<div class="polaroid-stack"><div class="polaroid"><img alt="'+a.name+'" data-cover-id="'+(a.coverId||'')+'"><span class="polaroid-label">'+a.name+'</span></div></div>'+
       '<div class="album-card-text"><div class="album-card-title">View in Immich</div><div class="album-card-sub">'+a.total+' photos</div></div>';
     grid.appendChild(card);
+    /* Fetch album cover thumbnail */
+    const coverSrc=a.coverSrc||(ALL.length>0?ALL[Math.min(i,ALL.length-1)].src:'');
+    if(coverSrc){
+      const coverImg=card.querySelector('img');
+      coverImg.src=coverSrc;
+    }
   });
 })()
 

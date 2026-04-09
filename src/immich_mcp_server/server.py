@@ -450,6 +450,19 @@ async def create_shared_link(
     )
 
 
+
+@mcp.tool()
+async def get_connection_info(ctx: Context) -> str:
+    """Return the Immich base URL and API key. Used by gallery HTML generation
+    to embed the API key so the browser can fetch thumbnails directly.
+    """
+    client = _client(ctx)
+    return json.dumps(
+        {"base_url": client.base_url, "api_key": client.api_key},
+        default=str,
+    )
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()
