@@ -7,7 +7,8 @@
         "PYTHONPATH": "{plugin_install_dir}/src",
         "MCP_TRANSPORT": "stdio",
         "IMMICH_BASE_URL": "https://your-immich-server.com",
-        "IMMICH_API_KEY": "your-api-key-here"
+        "IMMICH_API_KEY": "your-api-key-here",
+        "IMMICH_CACHE_DIR": "{plugin_install_dir}/.mcpb-cache"
       }
     }
   }

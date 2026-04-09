@@ -63,6 +63,89 @@ async def get_statistics(ctx: Context) -> str:
     return json.dumps(result)
 
 
+# ── Credential Management ──────────────────────────────────
+
+
+@mcp.tool()
+async def update_credentials(ctx: Context, base_url: str, api_key: str) -> str:
+    """Update the Immich connection credentials. Use this when the API key
+    has been rotated or when the server URL has changed. The new credentials
+    are persisted to disk and take effect immediately — no restart required.
+
+    Args:
+        base_url: The Immich server URL (e.g. 'https://photos.example.com').
+        api_key: A valid Immich API key.
+    """
+    # 1. Create a new client with the provided credentials to validate them
+    import os
+    old_base = os.environ.get("IMMICH_BASE_URL", "")
+    old_key = os.environ.get("IMMICH_API_KEY", "")
+
+    try:
+        # Temporarily set env vars so ImmichClient can init
+        # (the config.json override hasn't been written yet)
+        os.environ["IMMICH_BASE_URL"] = base_url
+        os.environ["IMMICH_API_KEY"] = api_key
+        new_client = ImmichClient()
+    except Exception as e:
+        # Restore old env vars
+        os.environ["IMMICH_BASE_URL"] = old_base
+        os.environ["IMMICH_API_KEY"] = old_key
+        return json.dumps({
+            "success": False,
+            "error": f"Invalid credentials: {e}",
+        })
+
+    # 2. Verify the new credentials actually work
+    try:
+        await new_client.ping()
+    except Exception as e:
+        os.environ["IMMICH_BASE_URL"] = old_base
+        os.environ["IMMICH_API_KEY"] = old_key
+        return json.dumps({
+            "success": False,
+            "error": (
+                f"Could not connect to Immich at {base_url}: {e}. "
+                "Check the URL and API key are correct."
+            ),
+        })
+
+    # 3. Persist to cache dir so they survive restarts
+    try:
+        config_path = ImmichClient.save_config(base_url, api_key)
+    except RuntimeError as e:
+        # Credentials work but can't persist — still swap the live client
+        config_path = None
+
+    # 4. Hot-swap the live client (no restart needed)
+    ctx.request_context.lifespan_context["immich"] = new_client
+
+    # 5. Get stats to confirm everything works
+    try:
+        stats = await new_client.get_statistics()
+        photo_count = stats.get("photos", 0)
+        video_count = stats.get("videos", 0)
+    except Exception:
+        photo_count = "?"
+        video_count = "?"
+
+    result = {
+        "success": True,
+        "base_url": base_url,
+        "photos": photo_count,
+        "videos": video_count,
+    }
+    if config_path:
+        result["persisted_to"] = config_path
+    else:
+        result["warning"] = (
+            "Credentials updated for this session but could NOT be persisted to disk. "
+            "They will be lost on restart."
+        )
+
+    return json.dumps(result, default=str)
+
+
 # ── Asset Info ──────────────────────────────────────────────
 
 

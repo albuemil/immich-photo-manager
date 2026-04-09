@@ -1,11 +1,12 @@
 ---
 name: setup-immich-photo-manager
-description: First-time setup — configure your Immich MCP server connection and verify everything works
+description: First-time setup or credential update — configure your Immich MCP server connection and verify everything works
 ---
 
 # Immich Photo Manager — Setup
 
 Guide the user through connecting their Immich instance to this plugin.
+This skill handles both **first-time setup** and **credential updates** (e.g. API key rotation).
 
 ## Prerequisites Check
 
@@ -13,69 +14,76 @@ Before starting, verify these are available:
 
 1. **Immich instance** — Ask the user for their Immich server URL (e.g., `http://192.168.1.100:2283` or `https://photos.example.com`)
 2. **Immich API key** — The user needs to generate one from Immich → User Settings → API Keys. Link: https://immich.app/docs/features/command-line-interface#obtain-the-api-key
-3. **MCP server** — The Go binary must be built and running. Check if it's accessible.
 
 ## Setup Workflow
 
-### Step 1: Get the user's Immich details
+### Step 1: Check if MCP server is already running
+
+Call `ping` to test if the MCP server is already up.
+
+- **If ping succeeds** → the MCP server is running. Proceed to Step 2 to verify the API key works.
+- **If ping fails** → the MCP server is not running or not configured. Ask the user to check their plugin installation.
+
+### Step 2: Test if credentials are valid
+
+Call `get_statistics` or `search_metadata` (any authenticated endpoint).
+
+- **If it succeeds** → credentials are valid. Jump to Step 5 (show summary).
+- **If it returns 401 Unauthorized** → the API key is invalid or expired. Go to Step 3.
+
+### Step 3: Get new credentials from the user
 
 Ask the user:
-- What is your Immich server URL? (e.g., `http://localhost:2283`)
-- Do you have an API key? If not, guide them to create one.
+- What is your Immich server URL? (e.g., `https://photos.example.com`)
+- What is your new API key? (guide them to create one if needed: Immich → User Settings → API Keys)
 
-### Step 2: Verify the MCP server is running
+### Step 4: Update credentials via MCP tool
 
-The MCP server should be running on the user's machine. Default port is `8626`.
+**Use the `update_credentials` tool** to update the connection in-place:
 
-Test connectivity by calling the `ping` tool. If it works, the MCP server is already configured and running.
-
-If ping fails:
-- Ask if they've built the MCP server: `go build -o immich-mcp-server .`
-- Ask if it's running: `./immich-mcp-server` (needs `IMMICH_BASE_URL` and `IMMICH_API_KEY` env vars)
-- Check if the port is different from default
-
-### Step 3: Update plugin MCP config
-
-Once you have the correct MCP server URL, update `.claude-plugin/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "immich": {
-      "type": "http",
-      "url": "http://localhost:8626/mcp"
-    }
-  }
-}
+```
+update_credentials(base_url="https://photos.example.com", api_key="the-new-key")
 ```
 
-Replace the URL with whatever the user's MCP server is running on.
+This tool will:
+1. Validate the new credentials by pinging Immich
+2. Persist them to `.mcpb-cache/config.json` (survives session restarts)
+3. Hot-swap the live connection (no restart required)
 
-### Step 4: Verify connection
+**If `update_credentials` succeeds** → proceed to Step 5.
+**If it fails** → tell the user the credentials didn't work, ask them to double-check.
+
+**IMPORTANT:** Do NOT try to edit `mcp.json` directly — it's read-only for remote plugins.
+The `update_credentials` tool is the correct way to change credentials.
+
+### Step 5: Verify connection
 
 Run these checks:
 1. `ping` — Should return "pong"
 2. `get_statistics` — Should show photo count, video count, storage
 3. `get_server_version` — Should return Immich version
 
-### Step 5: Show summary
+### Step 6: Show summary
 
 ```
-✅ Connected to Immich v1.XX.X
-📸 XX,XXX photos | 🎬 X,XXX videos | 💾 XXX GB
-🔗 MCP server: http://localhost:8626/mcp
+Connected to Immich vX.XX.X
+Photos: XX,XXX | Videos: X,XXX | Storage: XXX GB
+Server: https://photos.example.com
 
 You're all set! Try these to get started:
-  • "How healthy is my photo library?" — full library health report
-  • "Show me my albums" — browse your albums with interactive galleries
-  • "Find photos of sunsets" — AI-powered visual search
-  • /my-travels — discover all your travel destinations
+  - "How healthy is my photo library?" — full library health report
+  - "Show me my albums" — browse your albums with interactive galleries
+  - "Find photos of sunsets" — AI-powered visual search
+  - /my-travels — discover all your travel destinations
 ```
 
-### For macOS persistent setup
+## Credential Rotation (Key Change)
 
-If the user wants the MCP server to start automatically, offer the launchd setup from `deploy/com.immich-mcp.plist.example`.
+When a user needs to update their API key (expired, rotated, etc.), the flow is simple:
 
-### For Linux persistent setup
+1. User provides the new API key
+2. Call `update_credentials(base_url, api_key)`
+3. Done — no restart, no reinstall, no manual file editing
 
-Offer the systemd unit from `doc/GETTING-STARTED.md`.
+The `update_credentials` tool validates the key before committing it, so the user
+gets immediate feedback if the key is wrong.
