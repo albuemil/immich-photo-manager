@@ -189,7 +189,7 @@ When photos come from an **existing real album** (Path A), Immich shared links p
 
 **Photo entry format with shared links:**
 ```javascript
-{src:'https://fotos.example.com/api/assets/<id>/thumbnail?key=<shared-key>',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
+{src:'https://your-immich-server.com/api/assets/<id>/thumbnail?key=<shared-key>',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
 ```
 
 #### Strategy 3: CORS-Enabled Direct URLs (Ideal — Requires User Setup)
@@ -243,10 +243,10 @@ User: "show me photos of Tikal"
    - {{ALBUM_NAME}} -> "Tikal & Petén"
    - {{ALBUM_TOTAL}} -> 169
    - {{SEARCH_QUERY}} -> "Tikal"
-   - {{IMMICH_URL}} -> "https://fotos.txeo.club"
+   - {{IMMICH_URL}} -> "https://your-immich-server.com"
    - {{PAGE_SIZE}} -> 20
    - {{PHOTO_COUNT}} -> 169 (all photos, since URLs are lightweight)
-   - {{PHOTO_ENTRIES}} -> {src:'https://fotos.txeo.club/api/assets/<id>/thumbnail?key=<shared-key>',id:"abc",name:"IMG_001",date:"2023-06-15"}, ...
+   - {{PHOTO_ENTRIES}} -> {src:'https://your-immich-server.com/api/assets/<id>/thumbnail?key=<shared-key>',id:"abc",name:"IMG_001",date:"2023-06-15"}, ...
    - {{ALBUMS_JSON}} -> {"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}
 8. Write tikal.html to outputs (~15KB regardless of photo count)
 9. Present computer:// link

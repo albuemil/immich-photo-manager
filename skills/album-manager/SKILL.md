@@ -182,7 +182,7 @@ The template uses these placeholders that MUST be replaced:
 | `{{ALBUM_NAME}}` | Display name of the album | `Lanzarote Verde` |
 | `{{ALBUM_TOTAL}}` | Total number of photos in the album | `273` |
 | `{{SEARCH_QUERY}}` | The query or description used to find photos | `&ldquo;green landscapes in Lanzarote&rdquo;` |
-| `{{IMMICH_URL}}` | Immich server base URL | `https://fotos.txeo.club` |
+| `{{IMMICH_URL}}` | Immich server base URL | `https://your-immich-server.com` |
 | `{{PAGE_SIZE}}` | Number of photos per lazy-load page | `20` |
 | `{{PHOTO_COUNT}}` | Total photos in the gallery (limit ~50 for file size) | `50` |
 | `{{PHOTO_ENTRIES}}` | The photo data entries (see format below) | See below |
@@ -261,7 +261,7 @@ User: "Show me photos from Lanzarote Verde"
    - {{ALBUM_NAME}} -> "Lanzarote Verde"
    - {{ALBUM_TOTAL}} -> 273
    - {{SEARCH_QUERY}} -> "Lanzarote Verde"
-   - {{IMMICH_URL}} -> "https://fotos.txeo.club"
+   - {{IMMICH_URL}} -> "https://your-immich-server.com"
    - {{PAGE_SIZE}} -> 20
    - {{PHOTO_COUNT}} -> 50 (first 50 of 273)
    - {{PHOTO_ENTRIES}} -> {src:'data:image/jpeg;base64,...',id:"abc",name:"IMG_001",date:"2023-06-15"},{src:'data:...',id:"def",...}

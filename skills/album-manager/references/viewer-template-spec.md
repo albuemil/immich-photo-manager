@@ -17,7 +17,7 @@ The Python pipeline should read these templates, replace placeholders, and write
 |---|---|---|
 | `{{ALBUM_NAME}}` | `data['album_name']` | Lanzarote Verde |
 | `{{ALBUM_ID}}` | `data['album_id']` | 71d380f4-... |
-| `{{IMMICH_URL}}` | `data['immich_url']` | https://fotos.txeo.club |
+| `{{IMMICH_URL}}` | `data['immich_url']` | https://your-immich-server.com |
 | `{{TOTAL_ASSETS}}` | `data['total_assets']` | 273 |
 | `{{COUNT}}` | `len(data['thumbnails'])` | 20 |
 | `{{QUERY_TEXT}}` | User's original query | show me photos from... |
