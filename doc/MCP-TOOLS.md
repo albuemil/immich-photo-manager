@@ -160,17 +160,15 @@ Less effective: Very specific queries, proper nouns, text-heavy images
 ## Architecture
 
 ```
-Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
-                                     :8626          your-instance
+Claude ←→ MCP (stdio) ←→ Python Server ←→ Immich REST API
+                                              your-instance
 ```
 
-- **Protocol**: Streamable HTTP on `/mcp`
-- **Health check**: GET `/health`
-- **Transport**: HTTP/1.1, JSON payloads
+- **Protocol**: stdio (standard MCP transport for Claude Code / Cowork)
 - **Auth**: Immich API key passed via environment variable (never exposed to Claude)
-- **Network**: Forces `tcp4` binding for IPv4 compatibility
+- **Thumbnail delivery**: Base64 data URIs embedded directly in self-contained HTML galleries — required because the Cowork viewer runs in an `about:` sandbox that blocks all external network requests
 
-Built with [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0.
+For a detailed explanation of the thumbnail delivery architecture and why base64 embedding is the only viable approach in Cowork, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
 

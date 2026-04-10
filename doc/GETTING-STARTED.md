@@ -190,6 +190,19 @@ See [SKILLS.md](./SKILLS.md) for detailed documentation of every skill.
 - Verify your Immich server is running: `curl http://your-server:2283/api/server/ping`
 - Check that the API key is valid: `curl -H "x-api-key: YOUR_KEY" http://your-server:2283/api/server/version`
 
+### Server pings OK but API key is rejected
+
+The `/api/server/ping` endpoint is **public** — it returns `{"res":"pong"}` without authentication. This means a successful ping does NOT confirm your API key works. To verify the key, test a protected endpoint:
+
+```bash
+curl -H "x-api-key: YOUR_KEY" https://your-server/api/users/me
+```
+
+If you get `{"message":"Invalid API key","error":"Unauthorized","statusCode":401}`, the key is wrong. Common causes:
+- Key was copied incompletely (missing trailing characters)
+- Key was revoked or expired in Immich → User Settings → API Keys
+- Key belongs to a different Immich instance
+
 ### Skills that need PostgreSQL report errors
 
 - Ensure PostgreSQL is accessible from where the MCP server runs
@@ -206,3 +219,11 @@ See [SKILLS.md](./SKILLS.md) for detailed documentation of every skill.
 
 - Don't use `ProcessPoolExecutor` — native HEIF libraries deadlock on fork on macOS
 - Use `ThreadPoolExecutor(max_workers=4)` instead
+
+---
+
+## Further Reading
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — How base64-embedded thumbnails solve the Cowork sandbox restriction, with full data flow diagrams
+- [MCP-TOOLS.md](./MCP-TOOLS.md) — Complete reference for all 19 MCP tools
+- [SKILLS.md](./SKILLS.md) — Detailed documentation for all 11 skills
