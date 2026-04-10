@@ -116,7 +116,7 @@ Geographic album creation combines GPS coordinates, CLIP visual search, and temp
 | 👥 | **People report** | Face recognition insights — who appears most, unnamed clusters worth naming, co-occurrence patterns |
 | 🌍 | **Travel map** | Interactive Leaflet.js map with clustered pins showing every place you've photographed |
 | 🔗 | **Gallery publishing** | Create shared links to make albums publicly accessible |
-| 🖼️ | **Interactive HTML galleries** | Self-contained gallery pages with embedded thumbnails, dark/light themes, 4 view modes, slideshow, and keyboard navigation |
+| 🖼️ | **Interactive HTML galleries** | Self-contained gallery pages with embedded thumbnails, 3 themes (light/system/dark), 5 view modes, slideshow, and keyboard navigation |
 | 🎛️ | **Cowork Actions Panel** | Select photos in the gallery and copy batch commands (Create Album, Get EXIF, Find Similar, Download, etc.) straight into Cowork chat |
 | 🛡️ | **Safety first** | Never deletes automatically — always shows findings and asks before acting |
 
@@ -131,7 +131,7 @@ You: "Show me my Egypt album"
 
 → Fetches album + base64 thumbnails from Immich
 → Generates single-file HTML with embedded images
-→ Dark/light themes, 4 view modes, slideshow, keyboard nav
+→ 3 themes (light/system/dark), 5 view modes, slideshow, keyboard nav
 → Cowork Actions Panel for batch operations
 
 ✅ egypt-album.html — open it, browse your photos, select & act

@@ -10,7 +10,7 @@ A Cowork session runs inside a sandboxed environment. The HTML viewer operates u
 
 1. **No outbound network requests** — `fetch()`, `XMLHttpRequest`, and even `<img src="https://...">` are all blocked by the browser sandbox.
 2. **No cookies or auth headers** — Even if requests weren't blocked, the viewer has no way to attach an Immich API key to image requests.
-3. **No CORS negotiation** — The `about:` origin cannot participate in CORS preflight, so even a permissive `Access-Control-Allow-Origin: *` on the Immich server wouldn't help.
+3. **No CORS negotiation** — The `about:` origin cannot participate in CORS preflight, so `Access-Control-Allow-Origin: *` on the Immich server does not help inside the Cowork sandbox. However, CORS headers **do** enable direct URL-based thumbnail loading when the gallery is opened in a regular browser (see Strategy 3 below).
 
 This means the traditional approach of serving `<img src="https://immich-server/api/assets/{id}/thumbnail">` simply does not work.
 
@@ -163,7 +163,7 @@ This produces identical results to the MCP-based workflow. The only difference i
 
 The gallery template (`assets/viewer-template.html`) is a single self-contained HTML file with:
 
-- **Dual theme support** — Dark and light modes with CSS custom properties
+- **Triple theme support** — Light, System (auto-detects via `prefers-color-scheme`), and Dark modes with CSS custom properties
 - **Responsive grid** — Adapts from 1 to 4+ columns based on viewport
 - **Lazy loading** — IntersectionObserver-based progressive image loading
 - **Album navigation** — Links to related real albums in the user's Immich library
