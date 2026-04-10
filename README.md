@@ -6,12 +6,11 @@
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://goreportcard.com/report/github.com/drolosoft/immich-photo-manager"><img src="https://goreportcard.com/badge/github.com/drolosoft/immich-photo-manager" alt="Go Report Card"></a>
 </p>
 
 > **📸🧹🗺️ MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
-If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 16 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
+If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 21 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
 
 <p align="center"><img src="https://raw.githubusercontent.com/drolosoft/immich-photo-manager/main/assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
@@ -23,6 +22,7 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 
 - A running [Immich](https://immich.app) instance (self-hosted, v1.90+)
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
+- **Python 3.10+** with `pip` ([download](https://www.python.org/downloads/))
 
 ### Option A: Install as Claude Plugin (recommended)
 
@@ -31,7 +31,7 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 git clone https://github.com/drolosoft/immich-photo-manager.git
 cd immich-photo-manager
 
-# 2. Run the interactive setup (installs deps, configures MCP)
+# 2. Run the interactive setup (installs Python deps, configures MCP)
 ./scripts/setup-mcp.sh
 
 # 3. Register the marketplace and install the plugin
@@ -75,7 +75,7 @@ Create `.mcp.json` in the project root:
 
 > **Important:** Use `PYTHONPATH` pointing to the `src/` directory. Do NOT use `cwd` (it is silently ignored by Claude Code).
 
-> **Note on Smart Search (CLIP):** The `search_smart` tool requires the Immich machine learning service to be running and Smart Search enabled in **Administration > Settings > Machine Learning Settings > Smart Search**. If the ML service is not configured, the tool will return a helpful error message instead of failing silently. All other 15 tools work without the ML service. See the [Immich Smart Search docs](https://immich.app/docs/features/smart-search) for setup details.
+> **Note on Smart Search (CLIP):** The `search_smart` tool requires the Immich machine learning service to be running and Smart Search enabled in **Administration > Settings > Machine Learning Settings > Smart Search**. If the ML service is not configured, the tool will return a helpful error message instead of failing silently. All other tools work without the ML service. See the [Immich Smart Search docs](https://immich.app/docs/features/smart-search) for setup details.
 
 ---
 
@@ -198,21 +198,25 @@ See the **[Skills Reference](doc/SKILLS.md)** for detailed workflows, triggers, 
 ## ⚙️ How It Works
 
 ```
-Claude ←→ MCP (Streamable HTTP) ←→ Go Server ←→ Immich REST API
-                                     :8626          your-instance
+Claude ←→ MCP (stdio) ←→ Python Server ←→ Immich REST API
+                                              your-instance
 ```
 
-The MCP server is a single Go binary built with [mcp-go](https://github.com/mark3labs/mcp-go) v0.32.0. It exposes 16 tools over Streamable HTTP transport on `/mcp`, with a health check on `/health`.
+The MCP server is a Python module (`immich_mcp_server`) that communicates with Claude over stdio transport. It exposes 21 tools that map to Immich REST API endpoints, with added intelligence for batch operations, thumbnail embedding, and credential management.
 
-### 16 MCP Tools
+Gallery HTML files are fully self-contained — thumbnails are fetched from Immich, encoded as base64, and embedded directly in the HTML. This is required because the Cowork viewer runs in an `about:` sandbox that blocks all external network requests. See **[Architecture](doc/ARCHITECTURE.md)** for the full technical explanation.
+
+### 21 MCP Tools
 
 | Category | Tools |
 |----------|-------|
-| 🏥 Health | `ping`, `get_server_version`, `get_statistics` |
-| 📷 Assets | `get_asset_info`, `get_map_markers` |
-| 🔍 Search | `search_metadata`, `search_smart` (CLIP) |
-| 📁 Albums | `list_albums`, `get_album`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
-| 🔗 Sharing | `list_shared_links`, `create_shared_link` |
+| 🏥 Health (3) | `ping`, `get_server_version`, `get_statistics` |
+| 📷 Assets (2) | `get_asset_info`, `get_map_markers` |
+| 🔍 Search (2) | `search_metadata`, `search_smart` (CLIP) |
+| 📁 Albums (7) | `list_albums`, `get_album`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
+| 🔗 Sharing (2) | `list_shared_links`, `create_shared_link` |
+| 🖼️ Thumbnails (3) | `get_asset_thumbnail`, `get_album_thumbnails`, `get_thumbnails_batch` |
+| 🔧 Config (2) | `get_connection_info`, `update_credentials` |
 
 See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types, and examples.
 
@@ -223,8 +227,9 @@ See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types
 | Document | Description |
 |----------|-------------|
 | **[Getting Started](doc/GETTING-STARTED.md)** | Installation, configuration, deployment options, and troubleshooting |
+| **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 16 MCP tools — parameters, return types, examples |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 21 MCP tools — parameters, return types, examples |
 
 ### Additional dependencies (optional)
 

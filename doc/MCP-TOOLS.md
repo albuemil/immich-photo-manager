@@ -1,12 +1,12 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 19 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 21 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
 ## Tool Categories
 
-### Health & Info
+### Health & Info (3)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
@@ -14,15 +14,14 @@ The Immich Photo Manager MCP server exposes 19 tools that Claude can use to inte
 | `get_server_version` | Get Immich server version | Version string |
 | `get_statistics` | Get library-wide statistics | Photo count, video count, storage used |
 
-### Assets
+### Assets (2)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
 | `get_asset_info` | Get full metadata for a specific asset | EXIF data, GPS, dates, dimensions, file info |
-| `get_asset_thumbnail` | Get base64-encoded thumbnail for a single asset | Base64 image data + MIME type |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
 
-### Search
+### Search (2)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
@@ -41,6 +40,7 @@ The Immich Photo Manager MCP server exposes 19 tools that Claude can use to inte
 | `taken_after` | ISO date | "2023-06-01" |
 | `taken_before` | ISO date | "2023-06-30" |
 | `asset_type` | string | "IMAGE" or "VIDEO" |
+| `is_favorite` | boolean | true |
 | `page` | number | 1 |
 | `size` | number | 50 (max 200) |
 
@@ -49,29 +49,47 @@ The Immich Photo Manager MCP server exposes 19 tools that Claude can use to inte
 | Parameter | Type | Example |
 |-----------|------|---------|
 | `query` | string | "sunset at the beach" |
+| `city` | string | "Barcelona" (optional filter) |
+| `state` | string | "Catalonia" (optional filter) |
+| `country` | string | "Spain" (optional filter) |
+| `taken_after` | ISO date | "2023-06-01" |
+| `taken_before` | ISO date | "2023-06-30" |
 | `page` | number | 1 |
 | `size` | number | 50 (max 200) |
 
-### Albums
+### Albums (7)
 
 | Tool | Description | Modifies? |
 |------|-------------|-----------|
 | `list_albums` | List all albums with asset counts | No |
 | `get_album` | Get album details including all asset IDs | No |
-| `get_album_thumbnails` | Get base64 thumbnails for assets in an album (batch) | No |
-| `create_album` | Create a new album with name and description | Yes |
+| `create_album` | Create a new album with name, description, and optional initial assets | Yes |
 | `update_album` | Update album name or description | Yes |
 | `delete_album` | Delete an album (photos are NOT deleted) | Yes |
 | `add_assets_to_album` | Add assets to an album by ID | Yes |
 | `remove_assets_from_album` | Remove assets from an album (photos stay in library) | Yes |
 
-### Sharing
+### Sharing (2)
 
 | Tool | Description | Modifies? |
 |------|-------------|-----------|
 | `list_shared_links` | List all shared links | No |
 | `create_shared_link` | Create a public link for an album | Yes |
-| `delete_shared_link` | Delete a shared link | Yes |
+
+### Thumbnails (3)
+
+| Tool | Description | Returns |
+|------|-------------|---------|
+| `get_asset_thumbnail` | Get base64-encoded thumbnail for a single asset | Base64 image data + MIME type |
+| `get_album_thumbnails` | Get base64 thumbnails for assets in an album (batch) | Array of {asset_id, data, mime_type, filename, date} |
+| `get_thumbnails_batch` | Get base64 thumbnails for a list of asset IDs (no album needed) | Array of {asset_id, data, mime_type, filename, date} |
+
+### Configuration (2)
+
+| Tool | Description | Modifies? |
+|------|-------------|-----------|
+| `get_connection_info` | Return the Immich base URL and API key | No |
+| `update_credentials` | Update Immich URL and API key at runtime (persisted to disk, no restart needed) | Yes |
 
 ---
 
@@ -93,23 +111,36 @@ The Immich Photo Manager MCP server exposes 19 tools that Claude can use to inte
 ```json
 {
   "album_id": "uuid-of-album",
-  "count": 20,
-  "offset": 0
+  "limit": 20,
+  "size": "thumbnail"
 }
 ```
 
-Batch version of `get_asset_thumbnail` — fetches thumbnails for all (or a subset of) assets in an album in a single call. Returns `{thumbnails: [{asset_id, data, mime_type}, ...], total_assets, immich_url}`. Set `count=0` (default) for all photos; use `count` + `offset` to paginate large albums. This is the primary tool for gallery HTML generation.
+Batch version of `get_asset_thumbnail` — fetches thumbnails for assets in an album in a single call. Returns album info and a list of thumbnail entries with asset IDs, base64 data, filenames, and dates. Default limit is 20, max 50. This is the primary tool for gallery HTML generation when working with albums.
+
+### `get_thumbnails_batch`
+
+```json
+{
+  "asset_ids": ["uuid-1", "uuid-2", "uuid-3"],
+  "limit": 20,
+  "size": "thumbnail"
+}
+```
+
+Like `get_album_thumbnails` but works with arbitrary asset IDs — no album needed. Use this when displaying search results or orphan photos that aren't in any album. Default limit is 20, max 50.
 
 ### `create_album`
 
 ```json
 {
   "name": "🇮🇹 Roma, Italia",
-  "description": "Summer 2023 — 45 photos across historic center, Trastevere, and Vatican"
+  "description": "Summer 2023 — 45 photos across historic center, Trastevere, and Vatican",
+  "asset_ids": ["uuid-1", "uuid-2"]
 }
 ```
 
-Returns: Album object with `id` for use with other tools.
+Returns: Album object with `id` for use with other tools. `asset_ids` is optional — pass it to add photos at creation time.
 
 ### `add_assets_to_album`
 
@@ -134,6 +165,17 @@ Accepts up to ~2000 asset IDs per call. For larger batches, make multiple calls.
 
 Returns: Shared link URL that can be accessed without authentication.
 
+### `update_credentials`
+
+```json
+{
+  "base_url": "https://photos.example.com",
+  "api_key": "new-api-key-here"
+}
+```
+
+Updates the Immich connection credentials at runtime. The new credentials are persisted to disk and take effect immediately — no restart required. Use this when the API key has been rotated or when switching Immich instances.
+
 ### `search_metadata` — Pagination
 
 Results are paginated. First call returns `total` count:
@@ -150,7 +192,7 @@ For large result sets, iterate pages: `page=1`, `page=2`, etc., with `size=200` 
 
 ### `search_smart` — CLIP Search
 
-Uses Immich's machine learning container to find visually similar photos. Requires the ML container to be running.
+Uses Immich's machine learning container to find visually similar photos. Requires the ML container to be running. Can be combined with location and date filters for more precise results.
 
 Good queries: "sunset", "birthday cake", "mountains with snow", "group photo at dinner"
 Less effective: Very specific queries, proper nouns, text-heavy images
