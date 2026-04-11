@@ -3,10 +3,10 @@
 import subprocess, json, os
 
 env = {
-    "PYTHONPATH": "" + os.path.join(os.path.dirname(os.path.abspath(__file__)), "src") + "",
+    "PYTHONPATH": os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"),
     "MCP_TRANSPORT": "stdio",
-    "IMMICH_BASE_URL": "https://your-immich-server.com",
-    "IMMICH_API_KEY": "your-api-key-here",
+    "IMMICH_BASE_URL": os.environ.get("IMMICH_BASE_URL", "https://your-immich-server.com"),
+    "IMMICH_API_KEY": os.environ.get("IMMICH_API_KEY", "your-api-key-here"),
 }
 
 requests = [

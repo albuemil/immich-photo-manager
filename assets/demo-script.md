@@ -61,7 +61,7 @@ npx playwright install chromium
 | **Icon** | 📸 |
 | **Title** | immich-photo-manager |
 | **Badge** | Initially hidden, appears after Scene 1 |
-| **Stats** | 42,596 photos · 5,060 videos · 19 tools (appears after connection) |
+| **Stats** | 42,596 photos · 5,060 videos · 21 tools (appears after connection) |
 
 ---
 
@@ -71,13 +71,13 @@ Shows the mandatory setup flow. Every skill requires a connected server.
 
 | Field | Value |
 |-------|-------|
-| **Prompt** | `/setup` |
+| **Prompt** | `/setup-immich-photo-manager` |
 | **Visual** | Setup card with server URL field |
 | **Animation** | URL types itself in → ping fires → ✅ Connected result |
 | **Duration** | ~4.5s |
 
 ### What to show:
-- User sends `/setup`
+- User sends `/setup-immich-photo-manager`
 - Claude responds with a setup card:
   - Title: "🔗 Connect to Immich"
   - Input field with label "Server URL"
@@ -86,7 +86,7 @@ Shows the mandatory setup flow. Every skill requires a connected server.
   - Success result block: "✅ Connected · Immich v2.6.2"
   - Stats line: "42,596 photos · 5,060 videos · 124 albums"
 - Header badge transitions from hidden to "MCP Connected" (green)
-- Header right stats appear: "42,596 photos · 5,060 videos · 19 tools"
+- Header right stats appear: "42,596 photos · 5,060 videos · 21 tools"
 
 ### Key message:
 Users understand immediately that the plugin connects to THEIR Immich server.
@@ -191,7 +191,7 @@ The demo touches these plugin capabilities:
 
 | Step | Element | Delay after prev | Cumulative |
 |------|---------|----------------:|------------|
-| 1 | Scene 1 user (`/setup`) | 600ms | 0.6s |
+| 1 | Scene 1 user (`/setup-immich-photo-manager`) | 600ms | 0.6s |
 | 2 | Scene 1 setup card + URL typing | 1200ms | 1.8s |
 | 3 | Separator | 3500ms | 5.3s |
 | 4 | Scene 2 user message | 600ms | 5.9s |

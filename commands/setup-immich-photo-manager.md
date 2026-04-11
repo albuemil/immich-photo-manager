@@ -42,7 +42,7 @@ Ask the user:
 **Use the `update_credentials` tool** to update the connection in-place:
 
 ```
-update_credentials(base_url="https://photos.example.com", api_key="YOUR-API-KEY-HERE")
+update_credentials(base_url="https://photos.example.com", api_key="the-new-key")
 ```
 
 This tool will:
@@ -90,8 +90,79 @@ gets immediate feedback if the key is wrong.
 
 ---
 
-## Post-Install: CORS Configuration (Optional)
+## Post-Install: CORS Configuration (Recommended)
 
-For faster, lighter gallery files when viewed in a regular browser, enable CORS on your Immich reverse proxy. This is optional — base64 thumbnails work everywhere by default.
+After the basic setup is complete, recommend this optional but highly beneficial step.
 
-See the **[CORS Setup Guide](../doc/CORS-SETUP.md)** for Nginx, Caddy, and Traefik configuration examples.
+### Why CORS matters
+
+The plugin generates HTML gallery viewers that display photo thumbnails. By default, thumbnails are embedded as base64 data inside the HTML file, which works everywhere but limits galleries to ~50 photos and produces large files.
+
+If the user enables CORS on their Immich server, galleries can load thumbnails directly from the server via URL. This enables true pagination, instant loading, and galleries with hundreds or thousands of photos — all in a tiny HTML file.
+
+### How to check if CORS is already enabled
+
+Ask the user: "Do you access Immich through a reverse proxy like Nginx, Caddy, or Traefik?" Most self-hosted Immich setups use one.
+
+### Configuration by reverse proxy
+
+#### Nginx
+
+Add these lines inside the `location` block that proxies to Immich:
+
+```nginx
+# CORS for immich-photo-manager gallery viewer
+add_header 'Access-Control-Allow-Origin' '*' always;
+add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS' always;
+add_header 'Access-Control-Allow-Headers' 'x-api-key, Content-Type' always;
+
+if ($request_method = 'OPTIONS') {
+    add_header 'Access-Control-Allow-Origin' '*';
+    add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS';
+    add_header 'Access-Control-Allow-Headers' 'x-api-key, Content-Type';
+    add_header 'Access-Control-Max-Age' 86400;
+    return 204;
+}
+```
+
+Then reload: `sudo nginx -s reload`
+
+#### Caddy
+
+Add a `header` block to the Immich site:
+
+```caddy
+photos.example.com {
+    header {
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods "GET, OPTIONS"
+        Access-Control-Allow-Headers "x-api-key, Content-Type"
+    }
+    reverse_proxy localhost:2283
+}
+```
+
+Then reload: `caddy reload`
+
+#### Traefik
+
+Add CORS middleware via labels (Docker) or file provider:
+
+```yaml
+# Docker labels
+- "traefik.http.middlewares.immich-cors.headers.accessControlAllowOriginList=*"
+- "traefik.http.middlewares.immich-cors.headers.accessControlAllowMethods=GET,OPTIONS"
+- "traefik.http.middlewares.immich-cors.headers.accessControlAllowHeaders=x-api-key,Content-Type"
+```
+
+#### Direct access (no reverse proxy)
+
+If the user accesses Immich directly on its port (e.g., `http://192.168.1.100:2283`), CORS headers would need to be set in Immich itself. As of Immich v1.x, there is no built-in CORS configuration. In this case, the user should either set up a lightweight reverse proxy or rely on base64-embedded thumbnails (the default, which works everywhere).
+
+### Security note
+
+Using `Access-Control-Allow-Origin: *` allows any website to make requests to the Immich API. For a self-hosted instance on a private network, this is generally acceptable. For a publicly exposed instance, the user may prefer to restrict the origin to specific domains or use `null` (which allows `file://` and `about:` origins used by local HTML viewers).
+
+### After enabling CORS
+
+Tell the user: "CORS is now enabled. Photo galleries will load much faster and support unlimited photos. No plugin changes needed — the gallery viewer automatically uses URL-based loading when the server supports it."
