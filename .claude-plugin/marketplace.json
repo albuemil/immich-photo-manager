@@ -15,8 +15,8 @@
         "email": "forge@drolosoft.com"
       },
       "source": {
-        "source": "url",
-        "url": "https://github.com/drolosoft/immich-photo-manager.git"
+        "source": "github",
+        "repo": "drolosoft/immich-photo-manager"
       },
       "homepage": "https://drolosoft.com/immich-photo-manager.html"
     }
