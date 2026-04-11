@@ -230,6 +230,7 @@ See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types
 | **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
 | **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 21 MCP tools — parameters, return types, examples |
+| **[CORS Setup Guide](doc/CORS-SETUP.md)** | Optional — enable direct URL thumbnail loading for browser-viewed galleries |
 
 ### Additional dependencies (optional)
 

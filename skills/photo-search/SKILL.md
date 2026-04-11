@@ -173,25 +173,6 @@ Each photo entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
 **Limitations:** HTML file size grows linearly with photo count (~18KB per photo). Not ideal for albums with hundreds of photos. Maximum practical limit is ~50 thumbnails per gallery file.
 
-#### Strategy 2: Shared Links (Best for Albums)
-
-When photos come from an **existing real album** (Path A), Immich shared links provide URL-based thumbnail delivery without authentication headers. Shared links generate public URLs with an embedded key that work in `<img src>` tags from any origin — no CORS issues.
-
-**How it works:**
-1. Call `create_shared_link(album_id=...)` to generate a shared link for the album
-2. The shared link URL follows the pattern: `https://<immich-url>/share/<shared-key>`
-3. Thumbnails are accessible at: `https://<immich-url>/api/assets/<asset-id>/thumbnail?key=<shared-key>`
-4. Use these URLs as the `src` in photo entries instead of base64
-
-**Advantages:** Tiny HTML file (just URLs), pagination works naturally with lazy loading, the browser fetches thumbnails on demand, supports albums with hundreds/thousands of photos.
-
-**Limitations:** Only works for photos in real albums (not arbitrary search results). Requires the Immich server to be reachable from the user's browser. Creates a shared link on the server (the user should be informed).
-
-**Photo entry format with shared links:**
-```javascript
-{src:'https://your-immich-server.com/api/assets/<id>/thumbnail?key=<shared-key>',id:'<asset-id>',name:'<filename>',date:'<ISO-date>'}
-```
-
 #### Strategy 3: CORS-Enabled Direct URLs (Ideal — Requires User Setup)
 
 If the user has configured CORS headers on their Immich reverse proxy, the gallery HTML can use JavaScript `fetch()` with the `x-api-key` header to load thumbnails on demand, converting responses to blob URLs. This enables full URL-based delivery for **any** photos, not just albums.
@@ -205,14 +186,12 @@ If the user has configured CORS headers on their Immich reverse proxy, the galle
 #### Strategy Decision Flow
 
 ```
-Is this a real album (Path A)?
-  ├─ YES → Use Strategy 2 (Shared Links) — best UX, URL-based pagination
-  └─ NO (orphan photos, Path B)
-       ├─ ≤50 photos → Use Strategy 1 (Base64) — always works
-       └─ >50 photos → Use Strategy 1 in batches of 50, warn user about file size
+Always use Base64 Embedded (Strategy 1) as the default:
+  ├─ ≤50 photos → Embed all thumbnails as base64
+  └─ >50 photos → Embed first 50 in batches, warn user about file size and total count
 ```
 
-**Note:** Strategy 3 (CORS) is an opt-in enhancement. When the documentation references it, present it as a "recommended post-install step" for power users who want the best experience.
+**Note:** CORS-enabled direct URLs (Strategy 3) are an opt-in enhancement for users who open galleries in a regular browser. They do NOT work inside the Cowork sandbox. Never mention strategy numbers or internal labels in user-facing output — just generate the gallery silently using the correct approach.
 
 ### Template lazy loading
 
@@ -237,7 +216,7 @@ User: "show me photos of Tikal"
 2. search_metadata(state="Petén", country="Guatemala") -> found 200+ assets
 3. list_albums() -> scan names -> found "Tikal & Petén" (id: d6dd63d0, 169 photos), "Guatemala" (id: 8dde4bb1, 392 photos)
 4. get_album(album_id="d6dd63d0") -> get asset list with IDs, names, dates
-5. create_shared_link(album_id="d6dd63d0") -> shared key for URL-based thumbnails
+5. get_thumbnails_batch(asset_ids=[...], size="thumbnail", limit=50) -> base64 JPEG data for first 50 photos
 6. Read assets/viewer-template.html
 7. Replace placeholders:
    - {{ALBUM_NAME}} -> "Tikal & Petén"
@@ -245,10 +224,10 @@ User: "show me photos of Tikal"
    - {{SEARCH_QUERY}} -> "Tikal"
    - {{IMMICH_URL}} -> "https://your-immich-server.com"
    - {{PAGE_SIZE}} -> 20
-   - {{PHOTO_COUNT}} -> 169 (all photos, since URLs are lightweight)
-   - {{PHOTO_ENTRIES}} -> {src:'https://your-immich-server.com/api/assets/<id>/thumbnail?key=<shared-key>',id:"abc",name:"IMG_001",date:"2023-06-15"}, ...
+   - {{PHOTO_COUNT}} -> 50 (limited to 50 for file size)
+   - {{PHOTO_ENTRIES}} -> {src:'data:image/jpeg;base64,...',id:"abc",name:"IMG_001",date:"2023-06-15"}, ...
    - {{ALBUMS_JSON}} -> {"id":"d6dd63d0","name":"Tikal & Petén","total":169},{"id":"8dde4bb1","name":"Guatemala","total":392}
-8. Write tikal.html to outputs (~15KB regardless of photo count)
+8. Write tikal.html to outputs (~0.9MB with 50 base64 thumbnails, total album has 169 photos)
 9. Present computer:// link
 ```
 

@@ -10,7 +10,7 @@ A Cowork session runs inside a sandboxed environment. The HTML viewer operates u
 
 1. **No outbound network requests** — `fetch()`, `XMLHttpRequest`, and even `<img src="https://...">` are all blocked by the browser sandbox.
 2. **No cookies or auth headers** — Even if requests weren't blocked, the viewer has no way to attach an Immich API key to image requests.
-3. **No CORS negotiation** — The `about:` origin cannot participate in CORS preflight, so `Access-Control-Allow-Origin: *` on the Immich server does not help inside the Cowork sandbox. However, CORS headers **do** enable direct URL-based thumbnail loading when the gallery is opened in a regular browser (see Strategy 3 below).
+3. **No CORS negotiation** — The `about:` origin cannot participate in CORS preflight, so `Access-Control-Allow-Origin: *` on the Immich server does not help inside the Cowork sandbox. However, if CORS headers are configured on the reverse proxy, direct URL-based thumbnail loading works when the gallery is opened in a regular browser — see [CORS Setup Guide](./CORS-SETUP.md) for details.
 
 This means the traditional approach of serving `<img src="https://immich-server/api/assets/{id}/thumbnail">` simply does not work.
 
