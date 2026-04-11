@@ -6,7 +6,7 @@ Groups photos by GPS proximity and outputs a location inventory.
 
 Usage:
     export IMMICH_BASE_URL="http://your-immich-server:2283"
-    export IMMICH_API_KEY="your-api-key"
+    export IMMICH_API_KEY="YOUR-API-KEY-HERE"
     python3 discover_locations.py
 """
 

@@ -140,7 +140,7 @@ In sessions where the MCP server is not connected but the user provides their Im
 import httpx, base64
 
 url = "https://your-immich.example.com"
-key = "your-api-key"
+key = "YOUR-API-KEY-HERE"
 headers = {"x-api-key": key}
 
 # Search

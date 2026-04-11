@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 // ── Paths ──────────────────────────────────────────────────────────────
 const ROOT = path.resolve(__dirname, '..');
@@ -102,18 +102,17 @@ function startServer() {
   console.log('  Generating optimized GIF...');
   const scaleFilter = `fps=${GIF_FPS},scale=${WIDTH}:-1:flags=lanczos`;
 
-  execSync(
-    `ffmpeg -y -ss ${TRIM_START} -i "${videoPath}" ` +
-    `-vf "${scaleFilter},palettegen=max_colors=${MAX_COLORS}:stats_mode=diff" "${PALETTE}"`,
-    { stdio: 'pipe' }
-  );
+  execFileSync('ffmpeg', [
+    '-y', '-ss', String(TRIM_START), '-i', videoPath,
+    '-vf', `${scaleFilter},palettegen=max_colors=${MAX_COLORS}:stats_mode=diff`,
+    PALETTE,
+  ], { stdio: 'pipe' });
 
-  execSync(
-    `ffmpeg -y -ss ${TRIM_START} -i "${videoPath}" -i "${PALETTE}" ` +
-    `-lavfi "${scaleFilter}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" ` +
-    `"${OUTPUT_GIF}"`,
-    { stdio: 'pipe' }
-  );
+  execFileSync('ffmpeg', [
+    '-y', '-ss', String(TRIM_START), '-i', videoPath, '-i', PALETTE,
+    '-lavfi', `${scaleFilter}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+    OUTPUT_GIF,
+  ], { stdio: 'pipe' });
 
   // 6. Report
   const size = (fs.statSync(OUTPUT_GIF).size / 1024 / 1024).toFixed(2);
