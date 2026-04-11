@@ -42,7 +42,7 @@ Ask the user:
 **Use the `update_credentials` tool** to update the connection in-place:
 
 ```
-update_credentials(base_url="https://photos.example.com", api_key="the-new-key")
+update_credentials(base_url="https://photos.example.com", api_key=<user-provided-key>)
 ```
 
 This tool will:
