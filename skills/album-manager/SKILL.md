@@ -164,7 +164,7 @@ When the user asks to **"show me photos from [album]"**, **"generate a gallery f
 Use the gallery template at `assets/viewer-template.html` (from the plugin root). This is a self-contained, single-file HTML gallery with:
 
 - **Triple theme support** — Light, System (auto-detects), and Dark modes
-- **5 view modes**: detail grid, icon grid, list, masonry, compact
+- **4 view modes: detail grid, icon grid, list, masonry
 - **Full-screen gallery overlay** with keyboard navigation (arrows, Escape, Space for slideshow)
 - **Touch/swipe gestures** for mobile
 - **Lazy loading** with intersection observers
