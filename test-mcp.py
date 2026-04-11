@@ -3,10 +3,10 @@
 import subprocess, json, os
 
 env = {
-    "PYTHONPATH": "/Users/txeo/immich-photo-manager/src",
+    "PYTHONPATH": "" + os.path.join(os.path.dirname(os.path.abspath(__file__)), "src") + "",
     "MCP_TRANSPORT": "stdio",
-    "IMMICH_BASE_URL": "https://fotos.txeo.club",
-    "IMMICH_API_KEY": "Bg25Qg1BAbueM19GBCTRPKDw9Ld89K6zDFyh1CiAqE",
+    "IMMICH_BASE_URL": "https://your-immich-server.com",
+    "IMMICH_API_KEY": "your-api-key-here",
 }
 
 requests = [
@@ -23,7 +23,7 @@ requests = [
 stdin_data = "\n".join(json.dumps(r) for r in requests) + "\n"
 
 proc = subprocess.run(
-    ["/opt/homebrew/bin/python3", "-m", "immich_mcp_server"],
+    ["python3", "-m", "immich_mcp_server"],
     input=stdin_data.encode(),
     capture_output=True,
     env=env,

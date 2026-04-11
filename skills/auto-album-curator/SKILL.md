@@ -176,7 +176,7 @@ This skill can be configured to run periodically via the `schedule` skill:
 
 - **Never adds photos automatically** — always presents suggestions for approval
 - Respects album boundaries — won't suggest adding a screenshot to a travel album
-- For shared albums (gallery.txeo.club), suggests additions but warns about public visibility
+- For shared albums (published via Immich shared links), suggests additions but warns about public visibility
 - CLIP search requires the Immich ML container to be running
 - Large libraries (>50K) may take 2-5 minutes to analyze all albums
 - The scoring weights can be adjusted by the user if suggestions aren't relevant enough

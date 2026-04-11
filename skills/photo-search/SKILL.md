@@ -173,7 +173,7 @@ Each photo entry in `{{PHOTO_ENTRIES}}` includes the full thumbnail data:
 
 **Limitations:** HTML file size grows linearly with photo count (~18KB per photo). Not ideal for albums with hundreds of photos. Maximum practical limit is ~50 thumbnails per gallery file.
 
-#### Strategy 3: CORS-Enabled Direct URLs (Ideal — Requires User Setup)
+#### CORS-Enabled Direct URLs (Optional — Requires User Setup)
 
 If the user has configured CORS headers on their Immich reverse proxy, the gallery HTML can use JavaScript `fetch()` with the `x-api-key` header to load thumbnails on demand, converting responses to blob URLs. This enables full URL-based delivery for **any** photos, not just albums.
 

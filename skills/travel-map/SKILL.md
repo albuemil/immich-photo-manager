@@ -190,7 +190,7 @@ Search bar to find a specific location on the map.
 | Format | Description |
 |---|---|
 | **Standalone HTML** | Self-contained file, opens in any browser, shareable |
-| **Hosted page** | Deploy to gallery.txeo.club or similar |
+| **Hosted page** | Deploy to your own domain or static hosting |
 | **Markdown report** | Text summary with country list, no map |
 | **JSON export** | Raw cluster data for custom visualization |
 

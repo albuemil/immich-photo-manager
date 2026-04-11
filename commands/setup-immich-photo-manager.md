@@ -157,7 +157,7 @@ Add CORS middleware via labels (Docker) or file provider:
 
 #### Direct access (no reverse proxy)
 
-If the user accesses Immich directly on its port (e.g., `http://192.168.1.100:2283`), CORS headers would need to be set in Immich itself. As of Immich v1.x, there is no built-in CORS configuration. In this case, the user should either set up a lightweight reverse proxy or use the base64/shared-link strategies instead.
+If the user accesses Immich directly on its port (e.g., `http://192.168.1.100:2283`), CORS headers would need to be set in Immich itself. As of Immich v1.x, there is no built-in CORS configuration. In this case, the user should either set up a lightweight reverse proxy or rely on base64-embedded thumbnails (the default, which works everywhere).
 
 ### Security note
 
