@@ -536,12 +536,16 @@ async def create_shared_link(
 
 @mcp.tool()
 async def get_connection_info(ctx: Context) -> str:
-    """Return the Immich base URL and API key. Used by gallery HTML generation
-    to embed the API key so the browser can fetch thumbnails directly.
+    """Return the Immich base URL and a masked API key.  Used by skills to
+    populate the {{IMMICH_URL}} placeholder in gallery templates.  The API
+    key is intentionally masked — thumbnails are delivered as base64 data
+    URIs, so the plaintext key is never needed in generated HTML.
     """
     client = _client(ctx)
+    key = client.api_key
+    masked = key[:8] + "..." + key[-4:] if len(key) > 12 else "***"
     return json.dumps(
-        {"base_url": client.base_url, "api_key": client.api_key[:8] + "..." + client.api_key[-4:] if len(client.api_key) > 12 else "***", "api_key_full": client.api_key},
+        {"base_url": client.base_url, "api_key_masked": masked},
         default=str,
     )
 

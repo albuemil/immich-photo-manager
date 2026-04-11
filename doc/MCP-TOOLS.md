@@ -88,7 +88,7 @@ The Immich Photo Manager MCP server exposes 21 tools that Claude can use to inte
 
 | Tool | Description | Modifies? |
 |------|-------------|-----------|
-| `get_connection_info` | Return the Immich base URL and API key | No |
+| `get_connection_info` | Return the Immich base URL and masked API key | No |
 | `update_credentials` | Update Immich URL and API key at runtime (persisted to disk, no restart needed) | Yes |
 
 ---
