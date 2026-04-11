@@ -1,4 +1,5 @@
 ---
+name: my-travels
 description: Discover all travel destinations in your photo library
 allowed-tools: ["mcp__immich__*"]
 ---
@@ -15,7 +16,7 @@ allowed-tools: ["mcp__immich__*"]
 > Run **/setup-immich-photo-manager** to configure your Immich connection. You'll need:
 > 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
 > 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
-> 3. The MCP server running (`./immich-mcp-server`)
+> 3. The MCP server configured (see **/setup-immich-photo-manager**)
 >
 > Nothing in this plugin will work until the connection is configured.
 

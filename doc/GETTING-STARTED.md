@@ -153,7 +153,7 @@ Description=Immich MCP Server
 After=network.target
 
 [Service]
-ExecStart=/path/to/immich-mcp-server
+ExecStart=/usr/bin/python3 -m immich_mcp_server
 Environment=IMMICH_BASE_URL=http://localhost:2283
 Environment=IMMICH_API_KEY=your-key-here
 Restart=on-failure

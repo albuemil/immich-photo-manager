@@ -12,7 +12,7 @@
 
 If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 21 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
 
-<p align="center"><img src="https://raw.githubusercontent.com/drolosoft/immich-photo-manager/main/assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
+<p align="center"><img src="./assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
 ---
 

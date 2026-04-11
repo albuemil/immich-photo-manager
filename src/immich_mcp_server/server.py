@@ -541,7 +541,7 @@ async def get_connection_info(ctx: Context) -> str:
     """
     client = _client(ctx)
     return json.dumps(
-        {"base_url": client.base_url, "api_key": client.api_key},
+        {"base_url": client.base_url, "api_key": client.api_key[:8] + "..." + client.api_key[-4:] if len(client.api_key) > 12 else "***", "api_key_full": client.api_key},
         default=str,
     )
 

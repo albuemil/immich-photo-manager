@@ -25,7 +25,7 @@ version: 1.0.0
 > Run **/setup-immich-photo-manager** to configure your Immich connection. You'll need:
 > 1. Your Immich server URL (e.g., `http://192.168.1.100:2283`)
 > 2. An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
-> 3. The MCP server running (`./immich-mcp-server`)
+> 3. The MCP server configured (see **/setup-immich-photo-manager**)
 >
 > Nothing in this plugin will work until the connection is configured.
 
@@ -41,17 +41,17 @@ Intelligent album creation and curation for Immich photo libraries. Organizes ph
 
 Use the Immich MCP tools for all API interactions:
 
-- `immich_search_assets` — Search by GPS coordinates, date range, city, country, camera, person, or smart/CLIP text query
-- `immich_create_album` — Create a new album with name and description
-- `immich_add_assets_to_album` — Add photos/videos to an album by asset IDs
-- `immich_remove_assets_from_album` — Remove assets from an album
-- `immich_list_albums` — List all albums with asset counts
-- `immich_get_album` — Get album details including all assets
-- `immich_delete_album` — Delete an album (does NOT delete the photos)
-- `immich_create_shared_link` — Create a public shared link for an album (makes it visible in Gallery)
-- `immich_get_asset_info` — Get full metadata for a specific asset (GPS, EXIF, dates)
-- `immich_get_statistics` — Get library statistics (total photos, videos, storage)
-- `immich_get_asset_thumbnail` — Get base64 thumbnail for an asset (used for gallery HTML generation)
+- `search_metadata / search_smart` — Search by GPS coordinates, date range, city, country, camera, person, or smart/CLIP text query
+- `create_album` — Create a new album with name and description
+- `add_assets_to_album` — Add photos/videos to an album by asset IDs
+- `remove_assets_from_album` — Remove assets from an album
+- `list_albums` — List all albums with asset counts
+- `get_album` — Get album details including all assets
+- `delete_album` — Delete an album (does NOT delete the photos)
+- `create_shared_link` — Create a public shared link for an album (makes it visible in Gallery)
+- `get_asset_info` — Get full metadata for a specific asset (GPS, EXIF, dates)
+- `get_statistics` — Get library statistics (total photos, videos, storage)
+- `get_asset_thumbnail` — Get base64 thumbnail for an asset (used for gallery HTML generation)
 
 ## Album Creation Workflow
 
@@ -61,16 +61,16 @@ Search by GPS bounding box OR by CLIP semantic search OR by date range:
 
 ```
 # GPS-based (most accurate)
-immich_search_assets(latitude=41.87, longitude=12.49, radius_km=50)  # Rome area
+search_metadata / search_smart(latitude=41.87, longitude=12.49, radius_km=50)  # Rome area
 
 # CLIP semantic search (when GPS is missing)
-immich_search_assets(query="Colosseum Rome Italy")
+search_metadata / search_smart(query="Colosseum Rome Italy")
 
 # Date-based (supplement)
-immich_search_assets(date_from="2023-06-01", date_to="2023-06-15")
+search_metadata / search_smart(date_from="2023-06-01", date_to="2023-06-15")
 
 # Combined
-immich_search_assets(latitude=41.87, longitude=12.49, radius_km=50, date_from="2023-06-01")
+search_metadata / search_smart(latitude=41.87, longitude=12.49, radius_km=50, date_from="2023-06-01")
 ```
 
 ### 2. Filter and curate
@@ -113,7 +113,7 @@ For the description, include:
 After creating the album, create a shared link to make it visible in the Gallery frontend:
 
 ```
-immich_create_shared_link(album_id="{id}", show_metadata=true, allow_download=false)
+create_shared_link(album_id="{id}", show_metadata=true, allow_download=false)
 ```
 
 ### 5. Verify

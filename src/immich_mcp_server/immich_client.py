@@ -101,6 +101,7 @@ class ImmichClient:
         config = {"base_url": base_url, "api_key": api_key}
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
+        os.chmod(config_path, 0o600)
         return config_path
 
     # ── HTTP ────────────────────────────────────────────────
