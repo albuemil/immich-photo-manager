@@ -8,17 +8,28 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://glama.ai/mcp/servers/drolosoft/immich-photo-manager"><img src="https://glama.ai/mcp/servers/drolosoft/immich-photo-manager/badges/score.svg" alt="immich-photo-manager MCP server"></a>
   <a href="https://github.com/drolosoft/immich-photo-manager/releases/tag/v1.0.0"><img src="https://img.shields.io/github/v/release/drolosoft/immich-photo-manager" alt="GitHub Release"></a>
+  <a href="https://immich.app"><img src="https://img.shields.io/badge/Immich-ecosystem-blueviolet.svg" alt="Immich"></a>
 </p>
 
-> **📸🧹🗺️ MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
+> **MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
-If you self-host [Immich](https://immich.app) and your library has grown past the point where you can manage it by hand, **immich-photo-manager** gives Claude direct access to your Immich instance through 21 MCP tools and 11 specialized skills — from finding cross-ecosystem duplicates with perceptual hashing to generating interactive HTML galleries with a Cowork Actions Panel.
+If your [Immich](https://immich.app) library has grown past what you can manage by hand, **immich-photo-manager** gives Claude direct access to your instance — search, organize, deduplicate, and curate albums through natural conversation. Runs locally over MCP — your photos never leave your server.
 
 <p align="center"><img src="./assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
 ---
 
-## 🚀 Quick Start
+## What It Does
+
+Say **"create albums for all my trips"** and watch it work:
+
+<p align="center"><img src="./assets/screenshot-06-geographic-albums.png" alt="Geographic album creation" width="700"></p>
+
+GPS coordinates, CLIP visual search, and temporal matching — combined in one request to create dozens of curated albums. No scripts, no manual sorting.
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
@@ -26,139 +37,42 @@ If you self-host [Immich](https://immich.app) and your library has grown past th
 - An Immich API key ([how to create one](https://immich.app/docs/features/command-line-interface#obtain-the-api-key))
 - **Python 3.10+** with `pip` ([download](https://www.python.org/downloads/))
 
-### Option A: Install as Claude Plugin (recommended)
+### Install as Claude Plugin (recommended)
 
 ```sh
 git clone https://github.com/drolosoft/immich-photo-manager.git
 cd immich-photo-manager
 
-# Register the marketplace and install
 claude plugin marketplace add .
 claude plugin install immich-photo-manager
 ```
 
-Verify with `claude plugin list`.
+That's it. Ask Claude: **"how healthy is my photo library?"**
 
-That's it. Open Claude and say **"how healthy is my photo library?"** to get started.
+<p align="center"><img src="./assets/screenshot-01-setup.png" alt="Setup complete" width="700"></p>
 
-> **Note:** The plugin connects to your Immich MCP server at `localhost:8626`. Make sure the server is running before using the plugin. See [Option B](#option-b-manual-mcp-server-setup) for how to build and start the server.
-
-### Option B: Manual MCP Server Setup
-
-If you prefer to configure the MCP server manually instead of using the setup script:
-
-```bash
-git clone https://github.com/drolosoft/immich-photo-manager.git
-cd immich-photo-manager
-pip3 install -r src/requirements.txt
-```
-
-Create `.mcp.json` in the project root:
-
-```json
-{
-  "mcpServers": {
-    "immich": {
-      "command": "python3",
-      "args": ["-m", "immich_mcp_server"],
-      "env": {
-        "PYTHONPATH": "/ABSOLUTE/PATH/TO/immich-photo-manager/src",
-        "MCP_TRANSPORT": "stdio",
-        "IMMICH_BASE_URL": "https://your-immich-server.com",
-        "IMMICH_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-> **Important:** Use `PYTHONPATH` pointing to the `src/` directory. Do NOT use `cwd` (it is silently ignored by Claude Code).
-
-> **Note on Smart Search (CLIP):** The `search_smart` tool requires the Immich machine learning service to be running and Smart Search enabled in **Administration > Settings > Machine Learning Settings > Smart Search**. If the ML service is not configured, the tool will return a helpful error message instead of failing silently. All other tools work without the ML service. See the [Immich Smart Search docs](https://immich.app/docs/features/smart-search) for setup details.
+> For manual MCP server setup, see **[Getting Started](doc/GETTING-STARTED.md)**.
 
 ---
 
-## 🎬 Core Workflow
+## Highlights
 
-```
-You: "Create albums for all the places I've traveled"
+- **AI-powered search** — natural language photo search via CLIP ("sunset at the beach", "birthday cake")
+- **Geographic albums** — create albums organized by place, combining GPS + CLIP + temporal matching
+- **Library cleanup** — detect screenshots, duplicates, and low-quality images with multi-signal analysis
+- **Duplicate detection** — cross-source analysis using perceptual hashing (finds re-encoded copies across Apple Photos, Google Photos, and other imports)
+- **Library health** — one command for asset inventory, metadata quality, storage breakdown, and recommendations
+- **Interactive galleries** — self-contained HTML pages with embedded thumbnails, 3 themes, 4 view modes, and a Cowork Actions Panel for batch operations
 
-→ Scans GPS data from 28,000+ photos
-→ Clusters by location, identifies 47 destinations across 14 countries
-→ Proposes album list for approval
-→ Creates albums with curated selections (20-50 photos each)
-→ Publishes to Gallery with shared links
+<p align="center"><img src="./assets/screenshot-03-gallery-selection.png" alt="Interactive gallery with Cowork Actions" width="700"></p>
 
-✅ Created: 🇮🇹 Roma, Italia (47 photos, Jun 2023)
-✅ Created: 🇪🇬 Cairo & Luxor, Egypt (63 photos, Mar 2024)
-✅ Created: 🇲🇽 Oaxaca, México (38 photos, Dec 2022)
-... 44 more albums
-```
-
-Geographic album creation combines GPS coordinates, CLIP visual search, and temporal matching — then filters out screenshots and duplicates automatically. One request, dozens of curated albums.
+> Select photos in the gallery, click an action, and paste the command into Claude. See **[Skills Reference](doc/SKILLS.md)** for all 11 skills.
 
 ---
 
-## ✨ Features
+## Why immich-photo-manager?
 
-| | Feature | What it does |
-|:---:|---------|-------------|
-| 🔍 | **AI-powered search** | Natural language photo search via CLIP ("sunset at the beach", "birthday cake") |
-| 🗺️ | **Geographic albums** | Create albums organized by place — GPS + CLIP combined for smart curation |
-| 🧹 | **Library cleanup** | Detect screenshots, duplicates, and low-quality images with multi-signal analysis |
-| 🔎 | **Duplicate report** | Deep cross-source duplicate analysis using perceptual hashing — finds re-encoded copies across Apple Photos, Google Photos, and other imports |
-| 🏥 | **Library health** | Comprehensive health check — asset inventory, metadata quality, storage breakdown, and recommendations |
-| 📅 | **Timeline gaps** | Find missing months, sparse periods, and single-source coverage risks in your photo timeline |
-| 🔧 | **Metadata fixer** | Detect and repair broken dates (noon/midnight), missing GPS, wrong timezones — with neighbor interpolation |
-| 📌 | **Auto-album curator** | Finds new photos that belong in existing albums using GPS, CLIP, and temporal matching |
-| 💾 | **Storage optimizer** | Identify RAW+JPEG pairs, oversized videos, and other space hogs with reclaimable space estimates |
-| 👥 | **People report** | Face recognition insights — who appears most, unnamed clusters worth naming, co-occurrence patterns |
-| 🌍 | **Travel map** | Interactive Leaflet.js map with clustered pins showing every place you've photographed |
-| 🔗 | **Gallery publishing** | Create shared links to make albums publicly accessible |
-| 🖼️ | **Interactive HTML galleries** | Self-contained gallery pages with embedded thumbnails, 3 themes (light/system/dark), 4 view modes, slideshow, and keyboard navigation |
-| 🎛️ | **Cowork Actions Panel** | Select photos in the gallery and copy batch commands (Create Album, Get EXIF, Find Similar, Download, etc.) straight into Cowork chat |
-| 🛡️ | **Safety first** | Never deletes automatically — always shows findings and asks before acting |
-
----
-
-## 🖼️ Interactive Gallery & Cowork Actions
-
-Say **"show me photos from Barcelona"** and the plugin generates a self-contained HTML gallery — no server required, opens in any browser.
-
-```
-You: "Show me my Egypt album"
-
-→ Fetches album + base64 thumbnails from Immich
-→ Generates single-file HTML with embedded images
-→ 3 themes (light/system/dark), 4 view modes, slideshow, keyboard nav
-→ Cowork Actions Panel for batch operations
-
-✅ egypt-album.html — open it, browse your photos, select & act
-```
-
-The **Cowork Actions Panel** is a sticky toolbar inside each gallery. Select photos, then click any action — the command is copied to your clipboard, ready to paste into Cowork chat:
-
-| Action | What it copies |
-|--------|---------------|
-| 📋 Copy IDs | Raw asset IDs for scripting |
-| ➕ Create Album | "Create a new album with these photos: ..." |
-| 📂 Add to Album | "Add these photos to album [name]: ..." |
-| 📦 Move to Album | "Move these photos to a different album: ..." |
-| 🔍 Get EXIF Info | "Get EXIF metadata for these photos: ..." |
-| 🔎 Find Similar | "Find visually similar photos to: ..." |
-| 🖼️ Set as Cover | "Set this photo as the album cover: ..." |
-| ⬇️ Download | "Download these photos: ..." |
-| ❤️ Add to Favs | "Mark these photos as favorites: ..." |
-| ⚠️ Remove from Album | "Remove these from album [name]: ..." |
-| 🗑️ Delete Photos | "Delete these photos permanently: ..." |
-
-The gallery is fully responsive, works offline once generated, and supports touch gestures on mobile.
-
----
-
-## 🤔 Why immich-photo-manager?
-
-Immich is excellent at storing, viewing, and searching your photos. But managing a large library — deduplication, metadata repair, album curation, storage analysis — still requires manual effort or custom scripts. immich-photo-manager bridges that gap.
+Immich is excellent at storing and viewing your photos. But managing a large library — deduplication, metadata repair, album curation, storage analysis — still requires manual effort or custom scripts.
 
 | | Manual / scripts | immich-photo-manager |
 |:---:|---|---|
@@ -166,112 +80,41 @@ Immich is excellent at storing, viewing, and searching your photos. But managing
 | 🗺️ | Export GPS, cluster manually | **Geographic albums** — automatic GPS + CLIP + temporal matching |
 | 🧹 | Hash files, diff checksums | **Perceptual hashing** — finds re-encoded duplicates across import sources |
 | 📊 | Query database, build reports | **Library health** — one command for metadata quality, storage, recommendations |
-| 📅 | SQL queries on timestamps | **Timeline gaps** — detects empty months and single-source coverage risks |
-| 🔧 | EXIF tools, manual review | **Metadata fixer** — neighbor interpolation for missing GPS, broken timestamps |
-| 🛡️ | Hope you don't delete the wrong thing | **Safety first** — never deletes without showing findings and asking |
+| 🛡️ | Manual review of every action | **Safety first** — shows findings, asks before acting |
 
 ---
 
-## 🧩 Skills
-
-Skills are specialized workflows that combine MCP tools with domain knowledge. Each handles a specific photo management task end-to-end.
-
-| Skill | What it does |
-|-------|-------------|
-| 🗺️ **Album Manager** | Create and curate albums organized by geography — GPS + CLIP + filtering |
-| 🔍 **Photo Search** | Natural language search combining GPS, CLIP, and metadata filters |
-| 🧹 **Photo Cleanup** | Detect screenshots, duplicates, and low-quality images with confidence levels |
-| 🔎 **Duplicate Report** | Cross-source duplicate analysis using perceptual hashing (pHash) |
-| 🏥 **Library Health** | Asset inventory, metadata completeness, storage breakdown, recommendations |
-| 📅 **Timeline Gaps** | Detect empty months, sparse periods, single-source coverage risks |
-| 🔧 **Metadata Fixer** | Repair broken dates, missing GPS, wrong timezones with neighbor interpolation |
-| 📌 **Auto-Album Curator** | Find new photos that match existing albums using GPS, CLIP, and temporal patterns |
-| 💾 **Storage Optimizer** | Identify RAW+JPEG pairs, oversized videos, reclaimable space estimates |
-| 👥 **People Report** | Face recognition insights — top faces, unnamed clusters, co-occurrence patterns |
-| 🌍 **Travel Map** | Interactive Leaflet.js map with clustered pins and heatmap overlay |
-
-See the **[Skills Reference](doc/SKILLS.md)** for detailed workflows, triggers, and output formats.
-
----
-
-## ⚙️ How It Works
-
-```
-Claude ←→ MCP (stdio) ←→ Python Server ←→ Immich REST API
-                                              your-instance
-```
-
-The MCP server is a Python module (`immich_mcp_server`) that communicates with Claude over stdio transport. It exposes 21 tools that map to Immich REST API endpoints, with added intelligence for batch operations, thumbnail embedding, and credential management.
-
-Gallery HTML files are fully self-contained — thumbnails are fetched from Immich, encoded as base64, and embedded directly in the HTML. This is required because the Cowork viewer runs in an `about:` sandbox that blocks all external network requests. See **[Architecture](doc/ARCHITECTURE.md)** for the full technical explanation.
-
-### 21 MCP Tools
-
-| Category | Tools |
-|----------|-------|
-| 🏥 Health (3) | `ping`, `get_server_version`, `get_statistics` |
-| 📷 Assets (2) | `get_asset_info`, `get_map_markers` |
-| 🔍 Search (2) | `search_metadata`, `search_smart` (CLIP) |
-| 📁 Albums (7) | `list_albums`, `get_album`, `create_album`, `update_album`, `delete_album`, `add_assets_to_album`, `remove_assets_from_album` |
-| 🔗 Sharing (2) | `list_shared_links`, `create_shared_link` |
-| 🖼️ Thumbnails (3) | `get_asset_thumbnail`, `get_album_thumbnails`, `get_thumbnails_batch` |
-| 🔧 Config (2) | `get_connection_info`, `update_credentials` |
-
-See the **[MCP Tools Reference](doc/MCP-TOOLS.md)** for parameters, return types, and examples.
-
----
-
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| **[Getting Started](doc/GETTING-STARTED.md)** | Installation, configuration, deployment options, and troubleshooting |
-| **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
+| **[Getting Started](doc/GETTING-STARTED.md)** | Installation, manual MCP setup, deployment options, and troubleshooting |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
 | **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 21 MCP tools — parameters, return types, examples |
+| **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[CORS Setup Guide](doc/CORS-SETUP.md)** | Optional — enable direct URL thumbnail loading for browser-viewed galleries |
 
-### Additional dependencies (optional)
+---
 
-Some advanced skills require Python packages or direct database access:
+## Contributing
 
-```bash
-pip3 install Pillow imagehash pillow-heif
-```
+Contributions are welcome — bug fixes, new skills, feature ideas. Open an issue or submit a PR.
 
-| Package | Used by | Purpose |
-|---------|---------|---------|
-| `Pillow` | duplicate-report | Image loading |
-| `imagehash` | duplicate-report | Perceptual hashing (pHash) |
-| `pillow-heif` | duplicate-report | HEIC/HEIF support (Apple Photos) |
-| PostgreSQL client | library-health, timeline-gaps, people-report, storage-optimizer | Database-level analysis |
+If immich-photo-manager helps manage your library, consider giving it a star on GitHub — it helps others discover the project.
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome. If you find a bug, have a feature idea, or want to improve a skill:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes
-4. Open a pull request
-
-For bug reports and feature requests, use [GitHub Issues](https://github.com/drolosoft/immich-photo-manager/issues).
-
----
-
-## ☕ Support
+## Support
 
 If immich-photo-manager saved you time or made your photo library easier to manage, consider buying me a coffee — it keeps the next one coming!
 
 <p align="center">
-<a href="https://buymeacoffee.com/juan.andres.morenorub.io"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
+<a href="https://buymeacoffee.com/juan.andres.morenorub.io"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50"></a>
 </p>
 
 ---
 
-## 📜 License
+## License
 
 **MIT License** — free to use, modify, and distribute.
 
