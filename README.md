@@ -59,10 +59,10 @@ That's it. Ask Claude: **"how healthy is my photo library?"**
 
 - **AI-powered search** — natural language photo search via CLIP ("sunset at the beach", "birthday cake")
 - **Geographic albums** — create albums organized by place, combining GPS + CLIP + temporal matching
+- **Metadata repair** — fix noon/midnight timestamps, infer missing GPS from neighboring photos, correct timezone offsets
 - **Library cleanup** — detect screenshots, duplicates, and low-quality images with multi-signal analysis
 - **Duplicate detection** — cross-source analysis using perceptual hashing (finds re-encoded copies across Apple Photos, Google Photos, and other imports)
 - **Library health** — one command for asset inventory, metadata quality, storage breakdown, and recommendations
-- **Metadata analysis** — detects noon/midnight timestamps, missing GPS, timezone mismatches, and generates actionable reports
 - **Interactive galleries** — self-contained HTML pages with embedded thumbnails, 3 themes, 4 view modes, and a Cowork Actions Panel for batch operations
 
 <p align="center"><img src="./assets/screenshot-03-gallery-selection.png" alt="Interactive gallery with Cowork Actions" width="700"></p>
@@ -73,13 +73,14 @@ That's it. Ask Claude: **"how healthy is my photo library?"**
 
 ## Why immich-photo-manager?
 
-Immich is excellent at storing and viewing your photos. But managing a large library — deduplication, metadata analysis, album curation, storage analysis — still requires manual effort or custom scripts.
+Immich is excellent at storing and viewing your photos. But managing a large library — deduplication, metadata repair, album curation, storage analysis — still requires manual effort or custom scripts.
 
 | | Manual / scripts | immich-photo-manager |
 |:---:|---|---|
 | 🔍 | Write API calls, parse JSON | **Natural language** — "find my sunset photos from Italy" |
 | 🗺️ | Export GPS, cluster manually | **Geographic albums** — automatic GPS + CLIP + temporal matching |
 | 🧹 | Hash files, diff checksums | **Perceptual hashing** — finds re-encoded duplicates across import sources |
+| 🔧 | Edit EXIF one file at a time | **Metadata repair** — batch-fix timestamps, infer GPS, correct timezones |
 | 📊 | Query database, build reports | **Library health** — one command for metadata quality, storage, recommendations |
 | 🛡️ | Manual review of every action | **Safety first** — shows findings, asks before acting |
 

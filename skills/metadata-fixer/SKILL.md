@@ -133,21 +133,26 @@ MISSING GPS: 4,230 photos (on days where other photos have GPS)
 Proceed with fixes? [Timestamps / GPS / Both / None]
 ```
 
-### Step 4: Propose Fixes (User-Approved)
+### Step 4: Apply Fixes (User-Approved)
 
-> **Note:** Direct EXIF writes (GPS, dates) via `update_asset_metadata` are experimental and may not persist on all Immich server versions. When EXIF writes are not available, Claude generates the equivalent Immich API calls as a script the user can run or debug with their server admin.
-
-Present the proposed fixes with confidence scores and let the user decide:
+Use the `update_asset_metadata` MCP tool to apply corrections:
 
 ```python
-# If update_asset_metadata EXIF writes work on the user's server:
-update_asset_metadata(asset_id="uuid", date_time_original="2019-07-14T15:23:41.000Z")
-update_asset_metadata(asset_id="uuid", latitude=41.3874, longitude=2.1686)
+# Update timestamps
+update_asset_metadata(
+    asset_id="uuid",
+    date_time_original="2019-07-14T15:23:41.000Z"
+)
 
-# If EXIF writes don't persist, generate equivalent curl commands:
-# curl -X PUT https://immich-server/api/assets/{id} -H "x-api-key: ..." \
-#   -d '{"latitude": 41.3874, "longitude": 2.1686}'
+# Update GPS coordinates
+update_asset_metadata(
+    asset_id="uuid",
+    latitude=41.3874,
+    longitude=2.1686
+)
 ```
+
+> **Known limitation:** Immich writes a `.xmp` sidecar when updating EXIF. If photos are in an external library with special characters (emojis) in the path, exiftool may fail silently. Photos uploaded directly through Immich work correctly.
 
 Process in batches and log every change for audit:
 

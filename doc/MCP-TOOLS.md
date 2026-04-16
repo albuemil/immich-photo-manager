@@ -19,7 +19,7 @@ The Immich Photo Manager MCP server exposes 22 tools that Claude can use to inte
 | Tool | Description | Returns |
 |------|-------------|---------|
 | `get_asset_info` | Get full metadata for a specific asset | EXIF data, GPS, dates, dimensions, file info |
-| `update_asset_metadata` | Update asset properties (favorites, visibility). EXIF fields (dates, GPS, description) accepted but persistence depends on Immich server version | Updated asset object |
+| `update_asset_metadata` | Update asset metadata (dates, GPS, description, favorites, rating) | Updated asset object |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
 
 ### Search (2)
@@ -136,23 +136,27 @@ Like `get_album_thumbnails` but works with arbitrary asset IDs — no album need
 ```json
 {
   "asset_id": "uuid-of-asset",
-  "is_favorite": true
+  "date_time_original": "2019-07-14T15:23:41.000Z",
+  "latitude": 41.3874,
+  "longitude": 2.1686
 }
 ```
 
-Updates properties on a single asset. Only provided fields are modified — omitted fields are left unchanged.
+Updates metadata fields on a single asset. Only provided fields are modified — omitted fields are left unchanged. Supports:
 
-| Parameter | Type | Status | Description |
-|-----------|------|--------|-------------|
-| `asset_id` | string | **Required** | The asset to update |
-| `is_favorite` | boolean | **Verified** | Mark as favorite |
-| `date_time_original` | ISO 8601 string | Experimental | Original capture date and time |
-| `latitude` | number (-90 to 90) | Experimental | GPS latitude |
-| `longitude` | number (-180 to 180) | Experimental | GPS longitude |
-| `description` | string | Experimental | Asset description text |
-| `rating` | integer (1-5) | Experimental | Star rating |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_id` | string | **Required.** The asset to update |
+| `date_time_original` | ISO 8601 string | Original capture date and time |
+| `latitude` | number (-90 to 90) | GPS latitude |
+| `longitude` | number (-180 to 180) | GPS longitude |
+| `description` | string | Asset description text |
+| `is_favorite` | boolean | Mark as favorite |
+| `rating` | integer (1-5) | Star rating |
 
-> **Note:** Asset-level fields (`is_favorite`) persist reliably. EXIF-level fields (dates, GPS, description, rating) are sent to the Immich API but persistence depends on your Immich server version and configuration. This matches a known limitation in some Immich deployments where the `asset_exif` table does not accept writes via the REST API. We are tracking this upstream.
+Used by the metadata-fixer skill to repair timestamps, infer GPS from neighboring photos, and correct timezone offsets — all with user approval before any change is applied.
+
+> **Known limitation:** Immich writes a `.xmp` sidecar file when updating EXIF data. If your photos are in an external library whose path contains special characters (e.g., emojis), exiftool may fail to create the sidecar and the update will silently revert. Photos uploaded directly through Immich are not affected.
 
 ### `create_album`
 
