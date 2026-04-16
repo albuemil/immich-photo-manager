@@ -59,7 +59,7 @@ The same plugin runs in **[Claude Code](https://docs.anthropic.com/en/docs/claud
 
 <p align="center"><img src="./doc/demos/cc/claude-code-conversation.png" alt="Split screen: Claude Code terminal generating a photo gallery on the left, browser showing the resulting gallery with album cards on the right" width="800"></p>
 
-> Full conversation transcript: **[Claude Code demo](doc/demos/cc/claude-code-example-demo.md)**
+> Full conversation transcript: **[Claude Code demo](doc/demos/cc/claude-code-example-demo.txt)**
 
 ---
 

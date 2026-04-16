@@ -14,4 +14,4 @@ Real workflows showing what the plugin does, step by step. Each demo uses the ac
 | 🖼️ | [08 — Interactive Gallery](08-interactive-gallery.md) | Generate self-contained HTML galleries with embedded thumbnails |
 | 👁️ | [09 — Auto Album Curator](09-auto-album-curator.md) | Monitor your library for new photos that match existing albums |
 | 👤 | [10 — People Report](10-people-report.md) | Face detection summary — who appears most, untagged faces, group photos |
-| 💻 | [Claude Code Demo](cc/claude-code-example-demo.md) | Same plugin, from the terminal — search, gallery generation, album links |
+| 💻 | [Claude Code Demo](cc/claude-code-example-demo.txt) | Same plugin, from the terminal — search, gallery generation, album links |
