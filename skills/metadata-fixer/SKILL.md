@@ -135,16 +135,21 @@ Proceed with fixes? [Timestamps / GPS / Both / None]
 
 ### Step 4: Apply Fixes (User-Approved)
 
-Use the Immich API to update asset metadata:
+Use the `update_asset_metadata` MCP tool to apply corrections:
 
-```bash
-# Update asset EXIF via Immich API
-PUT /api/assets/{id}
-{
-  "dateTimeOriginal": "2019-07-14T15:23:41.000Z",
-  "latitude": 41.3874,
-  "longitude": 2.1686
-}
+```python
+# Update timestamps
+update_asset_metadata(
+    asset_id="uuid",
+    date_time_original="2019-07-14T15:23:41.000Z"
+)
+
+# Update GPS coordinates
+update_asset_metadata(
+    asset_id="uuid",
+    latitude=41.3874,
+    longitude=2.1686
+)
 ```
 
 Process in batches and log every change for audit:

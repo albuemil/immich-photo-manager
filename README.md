@@ -59,6 +59,7 @@ That's it. Ask Claude: **"how healthy is my photo library?"**
 
 - **AI-powered search** — natural language photo search via CLIP ("sunset at the beach", "birthday cake")
 - **Geographic albums** — create albums organized by place, combining GPS + CLIP + temporal matching
+- **Metadata repair** — detects and fixes noon/midnight timestamps, infers missing GPS from neighboring photos, corrects timezone offsets
 - **Library cleanup** — detect screenshots, duplicates, and low-quality images with multi-signal analysis
 - **Duplicate detection** — cross-source analysis using perceptual hashing (finds re-encoded copies across Apple Photos, Google Photos, and other imports)
 - **Library health** — one command for asset inventory, metadata quality, storage breakdown, and recommendations
@@ -79,6 +80,7 @@ Immich is excellent at storing and viewing your photos. But managing a large lib
 | 🔍 | Write API calls, parse JSON | **Natural language** — "find my sunset photos from Italy" |
 | 🗺️ | Export GPS, cluster manually | **Geographic albums** — automatic GPS + CLIP + temporal matching |
 | 🧹 | Hash files, diff checksums | **Perceptual hashing** — finds re-encoded duplicates across import sources |
+| 🔧 | Edit EXIF one file at a time | **Metadata repair** — batch-fix timestamps, infer GPS, correct timezones |
 | 📊 | Query database, build reports | **Library health** — one command for metadata quality, storage, recommendations |
 | 🛡️ | Manual review of every action | **Safety first** — shows findings, asks before acting |
 
@@ -90,7 +92,7 @@ Immich is excellent at storing and viewing your photos. But managing a large lib
 |----------|-------------|
 | **[Getting Started](doc/GETTING-STARTED.md)** | Installation, manual MCP setup, deployment options, and troubleshooting |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 21 MCP tools — parameters, return types, examples |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 22 MCP tools — parameters, return types, examples |
 | **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[CORS Setup Guide](doc/CORS-SETUP.md)** | Optional — enable direct URL thumbnail loading for browser-viewed galleries |
 

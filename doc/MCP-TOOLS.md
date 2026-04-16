@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 21 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 22 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
@@ -14,11 +14,12 @@ The Immich Photo Manager MCP server exposes 21 tools that Claude can use to inte
 | `get_server_version` | Get Immich server version | Version string |
 | `get_statistics` | Get library-wide statistics | Photo count, video count, storage used |
 
-### Assets (2)
+### Assets (3)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
 | `get_asset_info` | Get full metadata for a specific asset | EXIF data, GPS, dates, dimensions, file info |
+| `update_asset_metadata` | Update asset metadata (dates, GPS, description, rating) | Updated asset object |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
 
 ### Search (2)
@@ -129,6 +130,31 @@ Batch version of `get_asset_thumbnail` — fetches thumbnails for assets in an a
 ```
 
 Like `get_album_thumbnails` but works with arbitrary asset IDs — no album needed. Use this when displaying search results or orphan photos that aren't in any album. Default limit is 20, max 50.
+
+### `update_asset_metadata`
+
+```json
+{
+  "asset_id": "uuid-of-asset",
+  "date_time_original": "2019-07-14T15:23:41.000Z",
+  "latitude": 41.3874,
+  "longitude": 2.1686
+}
+```
+
+Updates metadata fields on a single asset. Only provided fields are modified — omitted fields are left unchanged. Supports:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_id` | string | **Required.** The asset to update |
+| `date_time_original` | ISO 8601 string | Original capture date and time |
+| `latitude` | number (-90 to 90) | GPS latitude |
+| `longitude` | number (-180 to 180) | GPS longitude |
+| `description` | string | Asset description text |
+| `is_favorite` | boolean | Mark as favorite |
+| `rating` | integer (1-5) | Star rating |
+
+Used by the metadata-fixer skill to repair timestamps, infer GPS from neighboring photos, and correct timezone offsets — all with user approval before any change is applied.
 
 ### `create_album`
 

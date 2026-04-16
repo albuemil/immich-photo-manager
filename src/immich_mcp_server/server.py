@@ -161,6 +161,48 @@ async def get_asset_info(ctx: Context, asset_id: str) -> str:
 
 
 @mcp.tool()
+async def update_asset_metadata(
+    ctx: Context,
+    asset_id: str,
+    date_time_original: str = "",
+    latitude: float | None = None,
+    longitude: float | None = None,
+    description: str = "",
+    is_favorite: bool | None = None,
+    rating: int | None = None,
+) -> str:
+    """Update metadata for a specific asset (dates, GPS coordinates, description, etc).
+    Only provided fields are updated — omitted fields are left unchanged.
+
+    Args:
+        asset_id: The unique ID of the asset.
+        date_time_original: ISO 8601 date string (e.g. '2019-07-14T15:23:41.000Z').
+        latitude: GPS latitude (-90 to 90).
+        longitude: GPS longitude (-180 to 180).
+        description: Asset description text.
+        is_favorite: Mark as favorite.
+        rating: Rating from 1-5, or null for unrated.
+    """
+    fields: dict = {}
+    if date_time_original:
+        fields["dateTimeOriginal"] = date_time_original
+    if latitude is not None:
+        fields["latitude"] = latitude
+    if longitude is not None:
+        fields["longitude"] = longitude
+    if description:
+        fields["description"] = description
+    if is_favorite is not None:
+        fields["isFavorite"] = is_favorite
+    if rating is not None:
+        fields["rating"] = rating
+    if not fields:
+        return json.dumps({"error": "No fields to update. Provide at least one field."})
+    result = await _client(ctx).update_asset(asset_id, **fields)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
 async def get_map_markers(
     ctx: Context,
     file_created_after: str = "",

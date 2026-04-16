@@ -140,6 +140,10 @@ class ImmichClient:
         """Get full metadata for a single asset."""
         return await self._request("GET", f"/assets/{asset_id}")
 
+    async def update_asset(self, asset_id: str, **fields: Any) -> dict:
+        """Update asset metadata (dates, GPS, description, etc)."""
+        return await self._request("PUT", f"/assets/{asset_id}", json=fields)
+
     async def get_map_markers(
         self,
         is_archived: bool = False,
