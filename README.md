@@ -53,6 +53,14 @@ That's it. Ask Claude: **"how healthy is my photo library?"**
 
 > For manual MCP server setup, see **[Getting Started](doc/GETTING-STARTED.md)**.
 
+### Works in Claude Code
+
+The same plugin runs in **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** — search your library, curate albums, and generate galleries right from the terminal.
+
+<p align="center"><img src="./doc/demos/cc/claude-code-conversation.png" alt="Split screen: Claude Code terminal generating a photo gallery on the left, browser showing the resulting gallery with album cards on the right" width="800"></p>
+
+> Full conversation transcript: **[Claude Code demo](doc/demos/cc/claude-code-example-demo.md)**
+
 ---
 
 ## Highlights
