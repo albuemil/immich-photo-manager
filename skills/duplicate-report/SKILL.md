@@ -8,7 +8,7 @@ description: >
   "library health check", "photo dedup report", "run duplicate analysis",
   "compare my photo sources", or any variation of wanting to understand duplicate photos
   across import sources.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Duplicate Report

@@ -5,7 +5,7 @@
 
 ## Version
 - **Script version**: 3.0.0
-- **Plugin version**: 1.0.0
+- **Plugin version**: 1.1.0
 - **Last recorded**: (pending)
 - **Output**: `assets/demo.gif` (< 5 MB target)
 - **Target duration**: ~17 seconds (3 scenes)
@@ -222,7 +222,7 @@ The demo touches these plugin capabilities:
 | **Photo placeholders** | Gradient blocks (no real photos for privacy) |
 | **Setup card** | White card with border, URL input field |
 | **Toast** | Semi-transparent dark bar sliding up from gallery bottom |
-| **Watermark** | 📸🧹🗺️ immich-photo-manager v1.0.0 · drolosoft.com |
+| **Watermark** | 📸🧹🗺️ immich-photo-manager v1.1.0 · drolosoft.com |
 
 ---
 

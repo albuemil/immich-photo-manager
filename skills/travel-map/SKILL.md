@@ -8,7 +8,7 @@ description: >
   "map my photos", "where have I traveled", "GPS map", "location map",
   "map of my trips", "generate a map", "interactive map",
   or any variation of wanting to see their photos plotted on a map.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Travel Map

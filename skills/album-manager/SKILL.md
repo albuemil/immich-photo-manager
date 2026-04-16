@@ -8,7 +8,7 @@ description: >
   or any variation of creating, managing, or publishing photo albums in Immich.
   Also triggers on "what albums do I have", "list albums", "album stats",
   "show me photos from", "generate gallery for", "show me the album".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Album Manager

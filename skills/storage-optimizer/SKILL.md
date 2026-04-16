@@ -6,7 +6,7 @@ description: >
   Use when the user says "storage", "disk space", "what's eating my disk", "free up space",
   "storage report", "disk usage", "large files", "optimize storage", "space analysis",
   "how much space", "biggest files", or any variation of wanting to understand or reduce storage usage.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Storage Optimizer

@@ -6,7 +6,7 @@ description: >
   Use when the user says "library health", "health report", "library status", "library audit",
   "how healthy is my library", "photo stats", "library overview", "what's in my library",
   "library report", or any variation of wanting a comprehensive overview of their photo library's state.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Library Health Report

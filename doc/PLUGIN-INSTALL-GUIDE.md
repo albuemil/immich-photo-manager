@@ -132,7 +132,7 @@ Valid `plugin.json`:
 ```json
 {
   "name": "immich-photo-manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for intelligent photo management with Immich...",
   "mcpServers": "./.mcp.json",
   "author": {
@@ -155,7 +155,7 @@ Fields that are **NOT** allowed (will cause validation failure):
 
 ```
 ✘ Installation failed
-Invalid channel: immich-photo-manager-v1.0.0.plugin. Use 'stable' or 'latest'
+Invalid channel: immich-photo-manager-v1.1.0.plugin. Use 'stable' or 'latest'
 ```
 
 **Cause:** `claude install` is for installing/updating Claude Code itself, not plugins.
@@ -164,7 +164,7 @@ Invalid channel: immich-photo-manager-v1.0.0.plugin. Use 'stable' or 'latest'
 
 ```bash
 # Wrong
-claude install immich-photo-manager-v1.0.0.plugin
+claude install immich-photo-manager-v1.1.0.plugin
 
 # Right
 claude plugin install immich-photo-manager

@@ -8,7 +8,7 @@ description: >
   "curate albums", "auto-curate", "keep albums fresh", "album suggestions",
   "what new photos belong in my albums", "smart album update",
   or any variation of wanting to keep their albums up to date with recent imports.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Auto-Album Curator

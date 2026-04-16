@@ -7,7 +7,7 @@ description: >
   "unnamed faces", "face recognition", "how many people", "people stats",
   "who appears most", "tag my faces", "face cleanup", "person report",
   or any variation of wanting to understand the people in their photo library.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # People Report

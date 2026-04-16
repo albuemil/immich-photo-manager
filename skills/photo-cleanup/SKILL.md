@@ -6,7 +6,7 @@ description: >
   "find duplicates", "deduplicate", "photo cleanup", "library cleanup",
   "how many screenshots do I have", "free up space", "remove junk photos",
   or any variation of cleaning, deduplicating, or optimizing a photo library.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Photo Cleanup

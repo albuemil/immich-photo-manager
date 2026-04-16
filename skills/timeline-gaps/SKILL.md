@@ -6,7 +6,7 @@ description: >
   Use when the user says "timeline gaps", "missing months", "missing photos", "are there gaps",
   "what months am I missing", "photo timeline", "coverage check", "find missing periods",
   "when am I missing photos", or any variation of wanting to find holes in their photo timeline.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Timeline Gaps

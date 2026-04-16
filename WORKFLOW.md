@@ -124,7 +124,7 @@ xvfb-run node scripts/record-demo.js
 ./build-plugin.sh v1.1.0    # or specify version explicitly
 ```
 
-**Output:** `immich-photo-manager-v1.0.0.plugin` (a zip archive)
+**Output:** `immich-photo-manager-v1.1.0.plugin` (a zip archive)
 
 The build script:
 1. Compiles the Go MCP server binary (if Go is installed)
@@ -157,10 +157,10 @@ The build script:
 
 ```bash
 # Install the plugin
-claude plugin install ./immich-photo-manager-v1.0.0.plugin
+claude plugin install ./immich-photo-manager-v1.1.0.plugin
 
 # Or unzip manually to the plugins directory
-unzip immich-photo-manager-v1.0.0.plugin -d ~/.claude/plugins/immich-photo-manager/
+unzip immich-photo-manager-v1.1.0.plugin -d ~/.claude/plugins/immich-photo-manager/
 ```
 
 ### Testing checklist

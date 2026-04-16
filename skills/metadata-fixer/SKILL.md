@@ -7,7 +7,7 @@ description: >
   Use when the user says "fix metadata", "fix dates", "wrong dates", "missing GPS",
   "metadata repair", "exif fix", "photos have wrong time", "noon dates", "midnight timestamps",
   "fix my photo dates", "metadata fixer", or any variation of wanting to repair photo metadata.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Metadata Fixer
