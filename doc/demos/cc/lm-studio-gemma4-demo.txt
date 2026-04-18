@@ -1,0 +1,80 @@
+
+============================================================
+IMMICH-PHOTO-MANAGER × GEMMA 4 (LM STUDIO)
+============================================================
+
+Immich: https://fotos.txeo.club
+Model:  gemma4-26b-it (local, LM Studio)
+Query:  "Show me my Lanzarote albums. I want to see all albums related to Lanzarote."
+
+1. Getting MCP tool schemas...
+   22 MCP tools available
+
+2. Asking Gemma 4...
+   Gemma 4 chose: list_albums({})
+
+3. Executing 'list_albums' against Immich...
+   Found 124 total albums, 14 Lanzarote albums:
+     - Lanzarote Amarillo (26 photos)
+     - Lanzarote Gasolina (174 photos)
+     - Lanzarote Rojo (201 photos)
+     - Lanzarote Azul (187 photos)
+     - Lanzarote Marrón (208 photos)
+     - Lanzarote Negro (193 photos)
+     - Lanzarote Verde (201 photos)
+     - Lanzarote — Costa Este / Malpaís (0 photos)
+     - Lanzarote — Norte / Famara (0 photos)
+     - Lanzarote — Mácher / Tías (0 photos)
+     - Lanzarote — Costa Teguise / Centro (0 photos)
+     - Lanzarote — Playas del Sur (0 photos)
+     - Lanzarote — Sur / Volcanes (0 photos)
+     - Lanzarote — Arrecife (0 photos)
+
+4. Gemma 4 interpreting results...
+
+============================================================
+GEMMA 4 ANSWER:
+============================================================
+I found several albums related to Lanzarote. Here they are, categorized
+by their content type:
+
+### Color-Themed Albums (with photos)
+* Lanzarote Amarillo: 26 assets
+* Lanzarote Azul: 187 assets
+* Lanzarote Gasolina: 174 assets
+* Lanzarote Marrón: 208 assets
+* Lanzarote Negro: 193 assets
+* Lanzarote Rojo: 201 assets
+* Lanzarote Verde: 201 assets
+
+### Location-Specific Albums (currently empty)
+* Lanzarote — Arrecife
+* Lanzarote — Costa Este / Malpaís
+* Lanzarote — Costa Teguise / Centro
+* Lanzarote — Mácher / Tías
+* Lanzarote — Norte / Famara
+* Lanzarote — Playas del Sur
+* Lanzarote — Sur / Volcanes
+============================================================
+
+RESULT: Gemma 4 (local) successfully managed Immich photos via MCP.
+  Model:     gemma4-26b-it (LM Studio, localhost:1234)
+  MCP tools: 22 available, 'list_albums' used
+  Immich:    https://fotos.txeo.club
+  Protocol:  MCP (stdio) → OpenAI-compatible API
+  Cloud:     NONE — fully self-hosted stack
+
+
+ABOUT THIS DEMO
+===============
+This is a real end-to-end test, not a simulation:
+- Gemma 4 26B (Q4_K_M quantization) running locally on Apple Silicon via LM Studio
+- immich-photo-manager MCP server providing 22 tools via stdio transport
+- Real Immich instance with 1,332+ assets (1,245 photos, 87 videos)
+- Zero cloud dependency — everything runs on the local machine
+
+The MCP protocol is vendor-neutral. The same 22 tools that work with Claude Code
+also work with LM Studio, Cursor, Windsurf, VS Code (Copilot), Cline, Zed, and
+any other MCP-compatible client.
+
+Test script: test-lmstudio-mcp.py (repo root)

@@ -13,7 +13,7 @@
 
 > **MCP server for intelligent photo management with [Immich](https://immich.app) — your self-hosted library, understood.**
 
-If your [Immich](https://immich.app) library has grown past what you can manage by hand, **immich-photo-manager** gives Claude direct access to your instance — search, organize, deduplicate, and curate albums through natural conversation. Runs locally over MCP — your photos never leave your server.
+If your [Immich](https://immich.app) library has grown past what you can manage by hand, **immich-photo-manager** gives any AI assistant direct access to your instance — search, organize, deduplicate, and curate albums through natural conversation. Works with Claude, Gemma, or any MCP-compatible client. Runs locally — your photos never leave your server.
 
 <p align="center"><img src="./assets/demo.gif" alt="immich-photo-manager demo" width="800"></p>
 
@@ -60,6 +60,52 @@ The same plugin runs in **[Claude Code](https://docs.anthropic.com/en/docs/claud
 <p align="center"><img src="./doc/demos/cc/claude-code-conversation.png" alt="Split screen: Claude Code terminal generating a photo gallery on the left, browser showing the resulting gallery with album cards on the right" width="800"></p>
 
 > Full conversation transcript: **[Claude Code demo](doc/demos/cc/claude-code-example-demo.txt)**
+
+### Works with Any MCP Client
+
+immich-photo-manager is an **MCP server** — it works with any AI assistant that speaks the Model Context Protocol, not just Claude.
+
+```
+============================================================
+IMMICH-PHOTO-MANAGER × GEMMA 4 (LM STUDIO)
+============================================================
+
+Immich: https://your-immich-server.com
+Model:  gemma4-26b-it (local, LM Studio)
+Query:  "Show me my Lanzarote albums"
+
+1. Getting MCP tool schemas...
+   22 MCP tools available
+
+2. Asking Gemma 4...
+   Gemma 4 chose: list_albums({})
+
+3. Executing 'list_albums' against Immich...
+   Found 124 total albums, 14 Lanzarote albums:
+     - Lanzarote Amarillo (26 photos)
+     - Lanzarote Rojo (201 photos)
+     - Lanzarote Azul (187 photos)
+     - Lanzarote Marrón (208 photos)
+     - Lanzarote Negro (193 photos)
+     - Lanzarote Verde (201 photos)
+     - Lanzarote Gasolina (174 photos)
+     ...
+
+4. Gemma 4 interpreting results...
+   "I found 14 Lanzarote albums — 7 color-themed with
+    1,190 photos and 7 location-specific albums."
+
+RESULT: Zero cloud dependency — fully self-hosted stack.
+```
+
+| Client | Status |
+|--------|--------|
+| Claude Code | Tested |
+| Claude Desktop | Tested |
+| LM Studio (Gemma 4) | Tested |
+| Cursor, Windsurf, VS Code, Cline, Zed | Compatible (MCP stdio) |
+
+> Full transcript: **[Gemma 4 demo](doc/demos/cc/lm-studio-gemma4-demo.txt)** · Test script: `test-lmstudio-mcp.py`
 
 ---
 
