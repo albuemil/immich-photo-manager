@@ -6,7 +6,7 @@ description: >
   "find duplicates", "deduplicate", "photo cleanup", "library cleanup",
   "how many screenshots do I have", "free up space", "remove junk photos",
   or any variation of cleaning, deduplicating, or optimizing a photo library.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Photo Cleanup
@@ -37,7 +37,7 @@ Intelligent photo library cleanup for Immich. Identifies and helps remove screen
 1. Identify candidates for removal
 2. Present findings with counts and examples to the user
 3. Get explicit approval before any deletion
-4. Prefer archiving over deleting when possible (Immich archive = hidden, not destroyed)
+4. Use `delete_assets(asset_ids, force=False)` to send photos to trash (recoverable). Use `restore_assets` or `restore_trash` to undo. Only use `force=True` for permanent deletion when the user explicitly requests it.
 
 ## Cleanup Categories
 
@@ -73,10 +73,11 @@ Sources of duplicates:
 - Edited versions alongside originals
 
 Detection strategy:
-1. **Exact duplicates**: Same file hash (SHA-256) → safe to remove the copy
-2. **Format duplicates**: Same timestamp + same dimensions, different format → keep highest quality (HEIC > JPEG > PNG)
-3. **Near-duplicates**: Same timestamp + similar dimensions + high CLIP similarity → present to user
-4. **Burst groups**: Sequential timestamps (< 2 seconds apart) + same location → let user pick best
+1. **Immich ML duplicates**: Use `get_duplicates` tool as a fast first pass — returns groups of visually similar assets detected by Immich's ML engine. Resolve with `resolve_duplicates`.
+2. **Exact duplicates**: Same file hash (SHA-256) → safe to remove the copy
+3. **Format duplicates**: Same timestamp + same dimensions, different format → keep highest quality (HEIC > JPEG > PNG)
+4. **Near-duplicates**: Same timestamp + similar dimensions + high CLIP similarity → present to user
+5. **Burst groups**: Sequential timestamps (< 2 seconds apart) + same location → let user pick best
 
 ### 3. Low-Quality Photo Detection
 
@@ -114,13 +115,13 @@ After the quick scan, clean up category by category:
    - Search by screen resolution dimensions
    - Filter: no GPS + no lens info
    - Present list grouped by confidence level
-   - User approves → archive or delete
+   - User approves → `delete_assets(asset_ids, force=False)` (moves to trash, recoverable)
 
 2. **Duplicates second** (requires more care)
    - Find exact hash duplicates first (safest)
    - Then find format duplicates (same photo, different format)
    - Keep the highest quality version
-   - User approves → delete copies
+   - User approves → `delete_assets(asset_ids, force=False)` to trash copies. For ML duplicates, use `get_duplicates` + `resolve_duplicates` first.
 
 3. **Low quality last** (most subjective)
    - Present candidates with thumbnails if possible

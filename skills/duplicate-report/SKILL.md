@@ -8,7 +8,7 @@ description: >
   "library health check", "photo dedup report", "run duplicate analysis",
   "compare my photo sources", or any variation of wanting to understand duplicate photos
   across import sources.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Duplicate Report
@@ -56,6 +56,20 @@ pip3 install Pillow imagehash pillow-heif --break-system-packages
 - `pillow-heif` — HEIC/HEIF support (critical for Apple Photos)
 
 ## Analysis Workflow
+
+### Step 0: ML-Based Duplicate Detection (Quick)
+
+Before running the full perceptual hash scan, check Immich's built-in ML duplicate detection:
+
+```
+result = get_duplicates()
+```
+
+This returns groups of visually similar assets detected by Immich's ML engine. Present the count and let the user resolve obvious duplicates immediately using `resolve_duplicates`.
+
+This is fast (no disk scan needed) but may miss re-encoded copies across import sources. For comprehensive cross-source analysis, proceed to Step 1.
+
+> Note: `resolve_duplicates` handles Immich ML duplicates natively. Perceptual hashing (Steps 1–3 below) catches cross-source re-encoded duplicates that ML may miss.
 
 ### Step 1: Discover Import Sources
 
@@ -156,11 +170,12 @@ RECOMMENDATION
 2. Ask user which categories to remove
 3. Confirm the exact count
 4. Execute removal in two steps:
-   a. Permanent delete from Immich (`DELETE /api/assets` with `force: true`)
-   b. Physical file removal from disk (`os.remove()`)
+   a. Move to Immich trash: `delete_assets(asset_ids=[...], force=False)` — safer, recoverable via `restore_assets` or `restore_trash`
+   b. Physical file removal from disk (`os.remove()`) only after user confirms trash is correct
+   c. For permanent deletion (user explicitly requests): `delete_assets(asset_ids=[...], force=True)` — irreversible
 5. Log everything to a JSON file for audit
 
-Batch Immich deletions in groups of 100 assets per API call.
+Batch Immich deletions in groups of 100 assets per call. For ML-detected duplicates, prefer `resolve_duplicates` which handles them natively in Immich.
 
 ### Step 6: Verify
 

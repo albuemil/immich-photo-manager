@@ -7,7 +7,7 @@ description: >
   "unnamed faces", "face recognition", "how many people", "people stats",
   "who appears most", "tag my faces", "face cleanup", "person report",
   or any variation of wanting to understand the people in their photo library.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # People Report
@@ -42,96 +42,88 @@ Analyze Immich's face recognition data to generate a report on people in the lib
 
 ### Step 1: Face Recognition Overview
 
-Query Immich's person and face data:
+Use the `list_people` MCP tool to get all people with pagination:
 
-```sql
--- Named vs unnamed people
-SELECT
-  count(*) FILTER (WHERE name IS NOT NULL AND name != '') as named,
-  count(*) FILTER (WHERE name IS NULL OR name = '') as unnamed,
-  count(*) as total_clusters
-FROM person;
+```
+# Get all people (including hidden clusters)
+result = list_people(page=1, size=200, with_hidden=true)
+# Repeat with page=2, 3, … until result.hasNextPage is false
 
--- Photos per person (top 20)
-SELECT p.name, p.id, count(af."assetId") as photo_count
-FROM person p
-JOIN asset_faces af ON p.id = af."personId"
-JOIN asset a ON af."assetId" = a.id
-WHERE a."deletedAt" IS NULL
-  AND p.name IS NOT NULL AND p.name != ''
-GROUP BY p.id, p.name
-ORDER BY photo_count DESC
-LIMIT 20;
+# Named: people where name is not empty
+named = [p for p in result.people if p.name]
+# Unnamed: people where name is empty
+unnamed = [p for p in result.people if not p.name]
 
--- Unnamed clusters with most faces (likely real people worth naming)
-SELECT p.id, count(af."assetId") as face_count
-FROM person p
-JOIN asset_faces af ON p.id = af."personId"
-JOIN asset a ON af."assetId" = a.id
-WHERE a."deletedAt" IS NULL
-  AND (p.name IS NULL OR p.name = '')
-GROUP BY p.id
-HAVING count(af."assetId") > 5
-ORDER BY face_count DESC
-LIMIT 20;
+# Top named people by face count (result includes a faceCount field)
+top_named = sorted(named, key=lambda p: p.faceCount, reverse=True)[:20]
+
+# Unnamed clusters worth naming (more than 5 faces)
+big_unnamed = [p for p in unnamed if p.faceCount > 5]
+big_unnamed.sort(key=lambda p: p.faceCount, reverse=True)
 ```
 
 ### Step 2: Co-Occurrence Analysis
 
-Find people who appear together most often:
+Find people who appear together most often using `get_asset_faces`:
 
-```sql
--- People appearing in the same photo
-SELECT
-  p1.name as person_a,
-  p2.name as person_b,
-  count(DISTINCT af1."assetId") as photos_together
-FROM asset_faces af1
-JOIN asset_faces af2 ON af1."assetId" = af2."assetId" AND af1."personId" != af2."personId"
-JOIN person p1 ON af1."personId" = p1.id
-JOIN person p2 ON af2."personId" = p2.id
-WHERE p1.name IS NOT NULL AND p1.name != ''
-  AND p2.name IS NOT NULL AND p2.name != ''
-  AND p1.name < p2.name  -- avoid duplicates
-GROUP BY p1.name, p2.name
-ORDER BY photos_together DESC
-LIMIT 15;
+```
+# For a sample of assets (e.g. from search_metadata), call get_asset_faces
+# to find which people appear in the same photo
+co_occurrence = {}  # (person_a_id, person_b_id) → count
+
+for asset_id in sample_asset_ids:
+    faces = get_asset_faces(asset_id=asset_id)
+    person_ids = [f.personId for f in faces if f.personId]
+    for i, a in enumerate(person_ids):
+        for b in person_ids[i+1:]:
+            key = tuple(sorted([a, b]))
+            co_occurrence[key] = co_occurrence.get(key, 0) + 1
+
+# Sort and present top 15 pairs
+top_pairs = sorted(co_occurrence.items(), key=lambda x: x[1], reverse=True)[:15]
 ```
 
 ### Step 3: Timeline Per Person
 
-When each person appears in the library:
+Iterate named people from `list_people` and use `get_person` for details:
 
-```sql
-SELECT p.name,
-  min(a."localDateTime") as first_appearance,
-  max(a."localDateTime") as last_appearance,
-  count(DISTINCT date_trunc('year', a."localDateTime")) as years_span
-FROM person p
-JOIN asset_faces af ON p.id = af."personId"
-JOIN asset a ON af."assetId" = a.id
-WHERE a."deletedAt" IS NULL AND p.name IS NOT NULL AND p.name != ''
-GROUP BY p.name
-ORDER BY count(*) DESC;
+```
+# For each named person, get_person returns birthDate and other metadata
+# Use search_metadata with personIds to find their date range
+timelines = []
+for person in named:
+    details = get_person(person_id=person.id)
+    # Use search_metadata(person_ids=[person.id], order="asc", size=1) for first appearance
+    # Use search_metadata(person_ids=[person.id], order="desc", size=1) for last appearance
+    first = search_metadata(person_ids=[person.id], order="asc", size=1)
+    last  = search_metadata(person_ids=[person.id], order="desc", size=1)
+    timelines.append({
+        "name": person.name,
+        "first": first.assets[0].localDateTime if first.assets else None,
+        "last":  last.assets[0].localDateTime  if last.assets  else None,
+        "face_count": person.faceCount,
+    })
 ```
 
 ### Step 4: Recognition Quality
 
-```sql
--- Face confidence distribution
-SELECT
-  CASE
-    WHEN af."imageWidth" * af."imageHeight" > 40000 THEN 'Large (>200x200)'
-    WHEN af."imageWidth" * af."imageHeight" > 10000 THEN 'Medium (100-200)'
-    ELSE 'Small (<100x100)'
-  END as face_size,
-  count(*) as faces
-FROM asset_faces af
-GROUP BY 1;
+Use `list_people` with `with_hidden=True` to surface hidden clusters, and `get_person_thumbnail` to visually inspect unnamed ones:
 
--- Potential merge candidates (unnamed clusters that might be the same person)
--- This is heuristic — check if unnamed clusters have similar face embeddings
--- Best done through the Immich UI, but we can flag the biggest unnamed clusters
+```
+# Hidden clusters — often low-confidence or suppressed by Immich
+all_people = list_people(page=1, size=500, with_hidden=True)
+hidden = [p for p in all_people.people if p.isHidden]
+
+# For each unnamed cluster worth reviewing, fetch a thumbnail to show the user
+for cluster in big_unnamed[:10]:
+    thumb = get_person_thumbnail(person_id=cluster.id)
+    # Present thumbnail so user can decide whether to name or merge
+    display(thumb)
+
+# Report recognition quality tiers based on faceCount
+large_clusters  = [p for p in unnamed if p.faceCount > 50]   # almost certainly real people
+medium_clusters = [p for p in unnamed if 10 < p.faceCount <= 50]
+small_clusters  = [p for p in unnamed if p.faceCount <= 10]   # may be noise
 ```
 
 ### Step 5: Generate Report
@@ -182,14 +174,14 @@ RECOMMENDATIONS
 ## Actions Available
 
 - **Export people list** — CSV with name, photo count, date range
-- **Flag unnamed clusters** — mark the most important ones for the user to name in Immich UI
+- **Flag unnamed clusters** — use `get_person_thumbnail` to show faces and ask user to name them
 - **Co-occurrence graph** — HTML visualization showing people connections (optional)
+- **Name a cluster** — use `update_person(person_id, name="...")` to name an unnamed cluster directly via MCP
+- **Merge duplicates** — use `merge_people(source_person_id, target_person_id)` to combine similar unnamed clusters
+- **Fix misidentified faces** — use `reassign_face(face_id, person_id)` to correct wrong assignments
 
 ## Important Notes
 
-- **Read-only** — this skill doesn't modify face assignments or person names
-- Face naming must be done in the Immich UI (or API) — this skill only reports
-- Person table structure may vary between Immich versions — verify column names
-- Co-occurrence analysis can be slow on libraries with many faces (>50K) — use LIMIT
+- **This skill can now name people, merge duplicates, and reassign faces using MCP tools — always confirm with user before modifying.**
+- Co-occurrence analysis can be slow on libraries with many faces (>50K) — sample assets rather than scanning all
 - Privacy consideration: face data is sensitive — reports should not be shared without consent
-- The face database schema depends on Immich version — queries may need adjustment for different releases
