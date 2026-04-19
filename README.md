@@ -75,7 +75,7 @@ Model:  gemma4-26b-it (local, LM Studio)
 Query:  "Show me my Lanzarote albums"
 
 1. Getting MCP tool schemas...
-   22 MCP tools available
+   36 MCP tools available
 
 2. Asking Gemma 4...
    Gemma 4 chose: list_albums({})
@@ -116,6 +116,8 @@ RESULT: Zero cloud dependency — fully self-hosted stack.
 - **Metadata repair** — fix noon/midnight timestamps, infer missing GPS from neighboring photos, correct timezone offsets
 - **Library cleanup** — detect screenshots, duplicates, and low-quality images with multi-signal analysis
 - **Duplicate detection** — cross-source analysis using perceptual hashing (finds re-encoded copies across Apple Photos, Google Photos, and other imports)
+- **People & face management** — list, search, merge, and organize recognized people; reassign misidentified faces; view face thumbnails
+- **Trash & asset lifecycle** — safely delete assets to trash, permanently remove, restore from trash; complete asset lifecycle management
 - **Library health** — one command for asset inventory, metadata quality, storage breakdown, and recommendations
 - **Interactive galleries** — self-contained HTML pages with embedded thumbnails, 3 themes, 4 view modes, and a Cowork Actions Panel for batch operations
 
@@ -146,7 +148,7 @@ Immich is excellent at storing and viewing your photos. But managing a large lib
 |----------|-------------|
 | **[Getting Started](doc/GETTING-STARTED.md)** | Installation, manual MCP setup, deployment options, and troubleshooting |
 | **[Skills Reference](doc/SKILLS.md)** | All 11 skills — workflows, triggers, parameters, output formats |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 22 MCP tools — parameters, return types, examples |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 36 MCP tools — parameters, return types, examples |
 | **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[CORS Setup Guide](doc/CORS-SETUP.md)** | Optional — enable direct URL thumbnail loading for browser-viewed galleries |
 
