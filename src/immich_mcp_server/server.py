@@ -775,6 +775,38 @@ async def restore_assets(ctx: Context, asset_ids: list[str]) -> str:
     return json.dumps({"restored": len(asset_ids)})
 
 
+# ── Duplicates ─────────────────────────────────────────────
+
+
+@mcp.tool()
+async def get_duplicates(ctx: Context) -> str:
+    """Get all ML-detected duplicate asset groups. Immich uses machine learning
+    to identify visually similar photos. Returns groups of duplicate assets
+    with similarity scores.
+    """
+    result = await _client(ctx).get_duplicates()
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def resolve_duplicates(ctx: Context, groups: list[dict]) -> str:
+    """Resolve duplicate groups by specifying which assets to keep and which to trash.
+
+    Each group dict must contain:
+    - duplicateId: The duplicate group ID (from get_duplicates)
+    - assetIds: List of asset IDs to KEEP
+    - trashIds: List of asset IDs to move to TRASH
+
+    Args:
+        groups: List of resolution decisions, each with duplicateId, assetIds (keep), and trashIds (trash).
+    """
+    await _client(ctx).resolve_duplicates(groups)
+    return json.dumps({
+        "resolved": len(groups),
+        "message": "Duplicate groups resolved. Trashed assets can be restored from trash.",
+    })
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()

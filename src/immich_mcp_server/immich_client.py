@@ -476,3 +476,13 @@ class ImmichClient:
     async def restore_assets(self, asset_ids: list[str]) -> None:
         """Restore specific assets from trash."""
         await self._request("POST", "/trash/restore/assets", json={"ids": asset_ids})
+
+    # ── Duplicates ─────────────────────────────────────────
+
+    async def get_duplicates(self) -> list[dict]:
+        """Get all detected duplicate groups."""
+        return await self._request("GET", "/duplicates")
+
+    async def resolve_duplicates(self, groups: list[dict]) -> None:
+        """Resolve duplicate groups (keep/trash decisions)."""
+        await self._request("POST", "/duplicates/resolve", json=groups)
