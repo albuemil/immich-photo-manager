@@ -592,6 +592,140 @@ async def get_connection_info(ctx: Context) -> str:
     )
 
 
+# ── People & Faces ─────────────────────────────────────────
+
+
+@mcp.tool()
+async def list_people(
+    ctx: Context, page: int = 1, size: int = 50, with_hidden: bool = False
+) -> str:
+    """List all recognized people in the library (paginated).
+
+    Args:
+        page: Page number (default 1).
+        size: Results per page (default 50).
+        with_hidden: Include hidden people (default False).
+    """
+    result = await _client(ctx).list_people(page=page, size=size, with_hidden=with_hidden)
+    people = result.get("people", [])
+    total = result.get("total", len(people))
+    return json.dumps({"total": total, "page": page, "people": people}, default=str)
+
+
+@mcp.tool()
+async def get_person(ctx: Context, person_id: str) -> str:
+    """Get full details for a specific person.
+
+    Args:
+        person_id: The person's unique ID.
+    """
+    result = await _client(ctx).get_person(person_id)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def update_person(
+    ctx: Context,
+    person_id: str,
+    name: str = "",
+    birth_date: str = "",
+    is_hidden: bool | None = None,
+    is_favorite: bool | None = None,
+    feature_face_asset_id: str = "",
+    color: str = "",
+) -> str:
+    """Update a person's details. Only provided fields are changed.
+
+    Args:
+        person_id: The person's unique ID.
+        name: Display name for this person.
+        birth_date: Birth date in ISO format (e.g. '1990-05-15').
+        is_hidden: Hide this person from the People view.
+        is_favorite: Mark this person as a favorite.
+        feature_face_asset_id: Asset ID to use as the person's feature face.
+        color: Color label for this person.
+    """
+    fields: dict = {}
+    if name:
+        fields["name"] = name
+    if birth_date:
+        fields["birthDate"] = birth_date
+    if is_hidden is not None:
+        fields["isHidden"] = is_hidden
+    if is_favorite is not None:
+        fields["isFavorite"] = is_favorite
+    if feature_face_asset_id:
+        fields["featureFaceAssetId"] = feature_face_asset_id
+    if color:
+        fields["color"] = color
+    if not fields:
+        return json.dumps({"error": "No fields to update. Provide at least one field."})
+    result = await _client(ctx).update_person(person_id, **fields)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def merge_people(ctx: Context, person_id: str, merge_ids: list[str]) -> str:
+    """Merge multiple people into one. DESTRUCTIVE: the people in merge_ids
+    are permanently absorbed into person_id. All their face assignments are
+    transferred to the target person. This cannot be undone.
+
+    Args:
+        person_id: The target person to keep (all faces merge into this person).
+        merge_ids: List of person IDs to merge into the target. These people will cease to exist.
+    """
+    result = await _client(ctx).merge_people(person_id, merge_ids)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def search_people(ctx: Context, name: str, with_hidden: bool = False) -> str:
+    """Search for people by name.
+
+    Args:
+        name: Name or partial name to search for.
+        with_hidden: Include hidden people in results (default False).
+    """
+    result = await _client(ctx).search_people(name, with_hidden=with_hidden)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def get_person_thumbnail(ctx: Context, person_id: str) -> str:
+    """Get a base64-encoded face thumbnail for a person.
+    Returns JSON with 'data' (base64 string) and 'type' (mime type).
+
+    Args:
+        person_id: The person's unique ID.
+    """
+    result = await _client(ctx).get_person_thumbnail(person_id)
+    return json.dumps(result)
+
+
+@mcp.tool()
+async def get_asset_faces(ctx: Context, asset_id: str) -> str:
+    """Get all detected faces in a specific asset, with their person assignments.
+
+    Args:
+        asset_id: The asset's unique ID.
+    """
+    result = await _client(ctx).get_asset_faces(asset_id)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def reassign_face(ctx: Context, face_id: str, person_id: str) -> str:
+    """Reassign a detected face to a different person. Use this to correct
+    face recognition mistakes.
+
+    Args:
+        face_id: The face detection ID (from get_asset_faces).
+        person_id: The person to assign this face to.
+    """
+    result = await _client(ctx).reassign_face(face_id, person_id)
+    return json.dumps(result, default=str)
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()
