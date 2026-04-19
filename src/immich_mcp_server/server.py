@@ -726,6 +726,55 @@ async def reassign_face(ctx: Context, face_id: str, person_id: str) -> str:
     return json.dumps(result, default=str)
 
 
+# ── Trash ──────────────────────────────────────────────────
+
+
+@mcp.tool()
+async def delete_assets(ctx: Context, asset_ids: list[str], force: bool = False) -> str:
+    """Delete assets by moving them to trash, or permanently delete them.
+
+    By default (force=False), assets are moved to trash and can be restored.
+    With force=True, assets are PERMANENTLY DELETED and cannot be recovered.
+
+    Args:
+        asset_ids: List of asset IDs to delete.
+        force: If True, permanently delete. If False (default), move to trash.
+    """
+    await _client(ctx).delete_assets(asset_ids, force=force)
+    return json.dumps({
+        "deleted": len(asset_ids),
+        "force": force,
+        "warning": "Assets permanently deleted." if force else "Assets moved to trash. Use restore_assets to undo.",
+    })
+
+
+@mcp.tool()
+async def empty_trash(ctx: Context) -> str:
+    """Permanently delete ALL assets currently in the trash.
+    WARNING: This is IRREVERSIBLE. All trashed assets will be permanently destroyed.
+    """
+    await _client(ctx).empty_trash()
+    return json.dumps({"success": True, "warning": "All trashed assets have been permanently deleted."})
+
+
+@mcp.tool()
+async def restore_trash(ctx: Context) -> str:
+    """Restore ALL trashed assets back to the library."""
+    await _client(ctx).restore_trash()
+    return json.dumps({"success": True, "message": "All trashed assets have been restored."})
+
+
+@mcp.tool()
+async def restore_assets(ctx: Context, asset_ids: list[str]) -> str:
+    """Restore specific assets from trash back to the library.
+
+    Args:
+        asset_ids: List of asset IDs to restore from trash.
+    """
+    await _client(ctx).restore_assets(asset_ids)
+    return json.dumps({"restored": len(asset_ids)})
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()
