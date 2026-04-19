@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 22 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 36 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
@@ -91,6 +91,35 @@ The Immich Photo Manager MCP server exposes 22 tools that Claude can use to inte
 |------|-------------|-----------|
 | `get_connection_info` | Return the Immich base URL and masked API key | No |
 | `update_credentials` | Update Immich URL and API key at runtime (persisted to disk, no restart needed) | Yes |
+
+### People & Faces (8)
+
+| Tool | Description | Modifies? |
+|------|-------------|-----------|
+| `list_people` | List all recognized people (paginated, supports hidden) | No |
+| `get_person` | Get full details for a specific person | No |
+| `update_person` | Update person name, birth date, hidden/favorite status, color | Yes |
+| `merge_people` | Merge multiple people into one (DESTRUCTIVE — cannot be undone) | Yes |
+| `search_people` | Search people by name | No |
+| `get_person_thumbnail` | Get base64-encoded face thumbnail for a person | No |
+| `get_asset_faces` | Get all detected faces in an asset with person assignments | No |
+| `reassign_face` | Reassign a face to a different person (correct misidentification) | Yes |
+
+### Trash & Deletion (4)
+
+| Tool | Description | Modifies? |
+|------|-------------|-----------|
+| `delete_assets` | Move assets to trash (default) or permanently delete (force=True) | Yes |
+| `empty_trash` | Permanently delete ALL trashed assets (IRREVERSIBLE) | Yes |
+| `restore_trash` | Restore all trashed assets back to library | Yes |
+| `restore_assets` | Restore specific assets from trash by ID | Yes |
+
+### Duplicates (2)
+
+| Tool | Description | Modifies? |
+|------|-------------|-----------|
+| `get_duplicates` | Get all ML-detected duplicate groups with similarity scores | No |
+| `resolve_duplicates` | Resolve duplicate groups — specify which to keep, which to trash | Yes |
 
 ---
 
@@ -203,6 +232,83 @@ Returns: Shared link URL that can be accessed without authentication.
 ```
 
 Updates the Immich connection credentials at runtime. The new credentials are persisted to disk and take effect immediately — no restart required. Use this when the API key has been rotated or when switching Immich instances.
+
+### `list_people`
+
+```json
+{
+  "page": 1,
+  "size": 50,
+  "with_hidden": false
+}
+```
+
+Returns `{total, page, people: [...]}` with person objects containing `id`, `name`, `birthDate`, `isHidden`, `thumbnailPath`, and face count. Paginated — iterate pages for large libraries.
+
+### `update_person`
+
+```json
+{
+  "person_id": "uuid-of-person",
+  "name": "María",
+  "birth_date": "1990-05-15"
+}
+```
+
+Only provided fields are updated — omitted fields are left unchanged. Supports: `name`, `birth_date`, `is_hidden`, `is_favorite`, `feature_face_asset_id`, `color`.
+
+### `merge_people`
+
+```json
+{
+  "person_id": "uuid-to-keep",
+  "merge_ids": ["uuid-to-merge-1", "uuid-to-merge-2"]
+}
+```
+
+**DESTRUCTIVE:** Merges all face assignments from `merge_ids` into `person_id`. The merged people cease to exist. This cannot be undone. Use `search_people` or `list_people` to identify merge candidates first.
+
+### `reassign_face`
+
+```json
+{
+  "face_id": "uuid-of-face",
+  "person_id": "uuid-of-correct-person"
+}
+```
+
+Corrects face recognition mistakes. Get face IDs from `get_asset_faces`, then reassign to the correct person. Useful for faces Immich misidentified.
+
+### `delete_assets`
+
+```json
+{
+  "asset_ids": ["uuid-1", "uuid-2", "uuid-3"],
+  "force": false
+}
+```
+
+With `force=false` (default): moves assets to trash — recoverable with `restore_assets`. With `force=true`: **permanently deletes** assets — cannot be recovered. Returns `{deleted: count, force: bool, warning: "..."}`.
+
+### `get_duplicates`
+
+Returns all duplicate groups detected by Immich's ML engine. Each group contains visually similar assets with similarity scores. No parameters — Immich manages detection automatically. Use this to find duplicates, then `resolve_duplicates` to act on them.
+
+### `resolve_duplicates`
+
+```json
+{
+  "groups": [
+    {
+      "duplicateId": "group-uuid",
+      "assetIds": ["uuid-to-keep"],
+      "trashIds": ["uuid-to-trash-1", "uuid-to-trash-2"]
+    }
+  ]
+}
+```
+
+Resolves duplicate groups by specifying which assets to keep and which to trash. Trashed assets can be restored via `restore_assets` or `restore_trash`.
 
 ### `search_metadata` — Pagination
 
