@@ -225,5 +225,5 @@ If you get `{"message":"Invalid API key","error":"Unauthorized","statusCode":401
 ## Further Reading
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — How base64-embedded thumbnails solve the Cowork sandbox restriction, with full data flow diagrams
-- [MCP-TOOLS.md](./MCP-TOOLS.md) — Complete reference for all 22 MCP tools
+- [MCP-TOOLS.md](./MCP-TOOLS.md) — Complete reference for all 36 MCP tools
 - [SKILLS.md](./SKILLS.md) — Detailed documentation for all 11 skills
