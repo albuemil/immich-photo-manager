@@ -1,6 +1,6 @@
 # Skills Reference
 
-Complete documentation for all 11 skills in the Immich Photo Manager plugin. Each skill is a specialized workflow that uses the MCP tools to perform intelligent photo management tasks.
+Complete documentation for all 12 skills in the Immich Photo Manager plugin. Each skill is a specialized workflow that uses the MCP tools to perform intelligent photo management tasks.
 
 ---
 
@@ -19,6 +19,7 @@ Complete documentation for all 11 skills in the Immich Photo Manager plugin. Eac
 | 9 | [Storage Optimizer](#9-storage-optimizer) | Analysis | Yes (optional delete) | PostgreSQL |
 | 10 | [People Report](#10-people-report) | Analysis | No | PostgreSQL |
 | 11 | [Travel Map](#11-travel-map) | Visualization | No | PostgreSQL |
+| 12 | [Rotate Photos](#12-rotate-photos) | Maintenance | Yes (applies edits) | MCP tools |
 
 **Safety principle**: Skills that modify data NEVER act automatically. They present findings, ask for approval, and only proceed with explicit confirmation.
 
@@ -466,6 +467,39 @@ Generates an interactive HTML map (Leaflet.js + MarkerCluster) showing every loc
 ### Privacy Warning
 
 The map reveals where you live, work, and travel. Auth is recommended before hosting publicly.
+
+---
+
+## 12. Rotate Photos
+
+**Trigger phrases**: "rotate photos", "rotate album", "fix rotation", "photos are sideways", "bulk rotate", "wrong orientation", "upside down photos"
+
+### What it does
+
+Bulk rotate photos by album or asset IDs. Non-destructive — uses Immich's built-in edits API so originals are never touched. Rotation is visible in the web UI, mobile app, and shared links.
+
+### Workflow
+
+1. **Select** — In Immich, pick the wrongly-rotated photos and add them to a temp album
+2. **Rotate** — `rotate_assets(album_id="...", angle=90)` rotates the entire album
+3. **Verify** — Check the Immich UI; thumbnails update to show the rotation
+4. **Adjust** — Rotate again if needed (accumulates: 90+90=180), or `revert_asset_edits` to undo
+
+### Key Behavior
+
+| Behavior | Detail |
+|----------|--------|
+| Accumulation | Calling rotate 90° twice = 180°. Reads current angle and adds. |
+| Full circle | 360° removes all edits entirely (`isEdited` returns to `false`) |
+| Per-asset | Rotation is stored on the asset, not the album. Shows everywhere. |
+| Revert | `revert_asset_edits(album_id="...")` removes all edits cleanly |
+
+### MCP Tools Used
+
+| Tool | Purpose |
+|------|---------|
+| `rotate_assets` | Apply rotation (accepts `album_id` or `asset_ids`) |
+| `revert_asset_edits` | Remove all edits, restore original orientation |
 
 ---
 
