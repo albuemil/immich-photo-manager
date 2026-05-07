@@ -203,6 +203,124 @@ async def update_asset_metadata(
 
 
 @mcp.tool()
+async def rotate_assets(
+    ctx: Context,
+    angle: int = 90,
+    asset_ids: list[str] | None = None,
+    album_id: str = "",
+) -> str:
+    """Rotate one or more assets. This is a non-destructive display transform —
+    the original file is never modified.
+
+    Provide EITHER asset_ids OR album_id. If album_id is given, all assets in
+    that album are rotated.
+
+    Args:
+        angle: Rotation angle in degrees clockwise. Common values: 90, 180, 270. Default: 90.
+        asset_ids: List of asset IDs to rotate.
+        album_id: Rotate ALL assets in this album.
+    """
+    if angle % 90 != 0:
+        return json.dumps({"error": "Angle must be a multiple of 90 (90, 180, 270)."})
+
+    client = _client(ctx)
+
+    # Resolve asset IDs from album if provided
+    ids: list[str] = []
+    album_name = ""
+    if album_id:
+        album = await client.get_album(album_id)
+        album_name = album.get("albumName", "")
+        ids = [a["id"] for a in album.get("assets", [])]
+        if not ids:
+            return json.dumps({"error": f"Album '{album_name}' is empty."})
+    elif asset_ids:
+        ids = asset_ids
+    else:
+        return json.dumps({"error": "Provide either asset_ids or album_id."})
+
+    results: dict = {"rotated": 0, "failed": 0, "errors": []}
+    for aid in ids:
+        try:
+            # Read current rotation and accumulate
+            current_angle = 0
+            try:
+                edits = await client.get_asset_edits(aid)
+                for edit in edits.get("edits", []):
+                    if edit.get("action") == "rotate":
+                        current_angle = edit["parameters"].get("angle", 0)
+            except Exception:
+                pass
+            new_angle = (current_angle + angle) % 360
+            if new_angle == 0:
+                # Full circle — remove edits instead
+                await client.delete_asset_edits(aid)
+            else:
+                await client.apply_asset_edits(aid, [
+                    {"action": "rotate", "parameters": {"angle": new_angle}},
+                ])
+            results["rotated"] += 1
+        except Exception as e:
+            results["failed"] += 1
+            results["errors"].append({"asset_id": aid, "error": str(e)})
+
+    results["angle"] = angle
+    results["total_requested"] = len(ids)
+    if album_name:
+        results["album"] = album_name
+    if not results["errors"]:
+        del results["errors"]
+    return json.dumps(results, default=str)
+
+
+@mcp.tool()
+async def revert_asset_edits(
+    ctx: Context,
+    asset_ids: list[str] | None = None,
+    album_id: str = "",
+) -> str:
+    """Remove all non-destructive edits (rotation, crop, mirror) from assets,
+    reverting them to their original appearance.
+
+    Provide EITHER asset_ids OR album_id.
+
+    Args:
+        asset_ids: List of asset IDs to revert.
+        album_id: Revert ALL assets in this album.
+    """
+    client = _client(ctx)
+
+    ids: list[str] = []
+    album_name = ""
+    if album_id:
+        album = await client.get_album(album_id)
+        album_name = album.get("albumName", "")
+        ids = [a["id"] for a in album.get("assets", [])]
+        if not ids:
+            return json.dumps({"error": f"Album '{album_name}' is empty."})
+    elif asset_ids:
+        ids = asset_ids
+    else:
+        return json.dumps({"error": "Provide either asset_ids or album_id."})
+
+    results: dict = {"reverted": 0, "failed": 0, "errors": []}
+    for aid in ids:
+        try:
+            await client.delete_asset_edits(aid)
+            results["reverted"] += 1
+        except Exception as e:
+            results["failed"] += 1
+            results["errors"].append({"asset_id": aid, "error": str(e)})
+
+    results["total_requested"] = len(ids)
+    if album_name:
+        results["album"] = album_name
+    if not results["errors"]:
+        del results["errors"]
+    return json.dumps(results, default=str)
+
+
+@mcp.tool()
 async def get_map_markers(
     ctx: Context,
     file_created_after: str = "",

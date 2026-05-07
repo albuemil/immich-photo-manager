@@ -144,6 +144,12 @@ class ImmichClient:
         """Update asset metadata (dates, GPS, description, etc)."""
         return await self._request("PUT", f"/assets/{asset_id}", json=fields)
 
+    async def run_asset_job(self, asset_ids: list[str], name: str) -> None:
+        """Queue a job for specific assets (e.g. regenerate-thumbnail)."""
+        await self._request(
+            "POST", "/assets/jobs", json={"name": name, "assetIds": asset_ids}
+        )
+
     async def get_map_markers(
         self,
         is_archived: bool = False,
@@ -281,20 +287,22 @@ class ImmichClient:
     # ── Thumbnails ──────────────────────────────────────────
 
     async def get_asset_thumbnail(
-        self, asset_id: str, size: str = "thumbnail"
+        self, asset_id: str, size: str = "thumbnail", edited: bool = True
     ) -> dict:
         """Get a base64-encoded thumbnail for an asset.
 
         Args:
             asset_id: The asset ID.
             size: 'thumbnail' (250px) or 'preview' (1440px).
+            edited: If True, return the edited version (with rotation/crop applied).
 
         Returns:
             dict with 'data' (base64 string) and 'type' (mime type).
         """
         url = f"{self.base_url}/api/assets/{asset_id}/{size}"
+        params = {"edited": "true"} if edited else {}
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=self._headers)
+            response = await client.get(url, headers=self._headers, params=params)
             response.raise_for_status()
             content_type = response.headers.get("content-type", "image/webp")
             b64 = base64.b64encode(response.content).decode("ascii")
@@ -458,6 +466,22 @@ class ImmichClient:
     async def reassign_face(self, face_id: str, person_id: str) -> dict:
         """Reassign a face to a different person."""
         return await self._request("PUT", f"/faces/{face_id}", json={"id": person_id})
+
+    # ── Asset Edits (rotate, mirror, crop) ───────────────────
+
+    async def apply_asset_edits(self, asset_id: str, edits: list[dict]) -> dict | None:
+        """Apply non-destructive edits (rotate, mirror, crop) to an asset."""
+        return await self._request(
+            "PUT", f"/assets/{asset_id}/edits", json={"edits": edits}
+        )
+
+    async def get_asset_edits(self, asset_id: str) -> dict:
+        """Get current edits applied to an asset."""
+        return await self._request("GET", f"/assets/{asset_id}/edits")
+
+    async def delete_asset_edits(self, asset_id: str) -> None:
+        """Remove all edits from an asset (revert to original)."""
+        await self._request("DELETE", f"/assets/{asset_id}/edits")
 
     # ── Trash ──────────────────────────────────────────────
 
