@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 36 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 38 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
@@ -14,12 +14,14 @@ The Immich Photo Manager MCP server exposes 36 tools that Claude can use to inte
 | `get_server_version` | Get Immich server version | Version string |
 | `get_statistics` | Get library-wide statistics | Photo count, video count, storage used |
 
-### Assets (3)
+### Assets (5)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
 | `get_asset_info` | Get full metadata for a specific asset | EXIF data, GPS, dates, dimensions, file info |
 | `update_asset_metadata` | Update asset metadata (dates, GPS, description, favorites, rating) | Updated asset object |
+| `rotate_assets` | Rotate assets by album or IDs (90°, 180°, 270°) — non-destructive | Count of rotated/failed assets |
+| `revert_asset_edits` | Remove all edits (rotation, crop, mirror) from assets — revert to original | Count of reverted/failed assets |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
 
 ### Search (2)
@@ -186,6 +188,42 @@ Updates metadata fields on a single asset. Only provided fields are modified —
 Used by the metadata-fixer skill to repair timestamps, infer GPS from neighboring photos, and correct timezone offsets — all with user approval before any change is applied.
 
 > **Known limitation:** Immich writes a `.xmp` sidecar file when updating EXIF data. If your photos are in an external library whose path contains special characters (e.g., emojis), exiftool may fail to create the sidecar and the update will silently revert. Photos uploaded directly through Immich are not affected.
+
+### `rotate_assets`
+
+```json
+{
+  "asset_ids": ["uuid-1", "uuid-2", "uuid-3"],
+  "angle": 90
+}
+```
+
+Applies a non-destructive rotation to one or more assets. The original file is never modified — Immich stores the transform as a display edit. Supports bulk operations: pass multiple asset IDs to rotate an entire selection in one call.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_ids` | list[string] | Asset IDs to rotate (provide this OR `album_id`) |
+| `album_id` | string | Rotate all assets in this album (provide this OR `asset_ids`) |
+| `angle` | integer | Clockwise rotation: 90, 180, or 270. Default: 90 |
+
+Returns `{rotated: count, failed: count, angle: degrees, album?: name}`. Failed assets (if any) include the asset ID and error message.
+
+### `revert_asset_edits`
+
+```json
+{
+  "album_id": "uuid-of-album"
+}
+```
+
+Removes all non-destructive edits (rotation, crop, mirror) from assets, reverting them to their original appearance. Accepts either `asset_ids` or `album_id`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_ids` | list[string] | Asset IDs to revert (provide this OR `album_id`) |
+| `album_id` | string | Revert all assets in this album (provide this OR `asset_ids`) |
+
+Returns `{reverted: count, failed: count, album?: name}`.
 
 ### `create_album`
 
