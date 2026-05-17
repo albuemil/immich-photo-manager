@@ -1149,9 +1149,9 @@ async def list_assets(
         page=page,
         size=min(size, 200),
     )
-    if isinstance(result, list):
-        return json.dumps({"total": len(result), "page": page, "assets": result}, default=str)
-    return json.dumps(result, default=str)
+    assets = result.get("assets", {}).get("items", [])
+    total = result.get("assets", {}).get("total", 0)
+    return json.dumps({"total": total, "page": page, "assets": assets}, default=str)
 
 
 # ── HTTP App (for Streamable HTTP transport) ────────────────
