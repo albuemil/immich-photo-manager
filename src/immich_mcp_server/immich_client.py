@@ -152,18 +152,18 @@ class ImmichClient:
         asset_type: str | None = None,
         page: int = 1,
         size: int = 100,
-    ) -> list[dict]:
-        """List assets with optional filters."""
-        params: dict = {"page": str(page), "size": str(size)}
+    ) -> dict:
+        """List assets with optional filters (uses search/metadata endpoint)."""
+        body: dict[str, Any] = {"page": page, "size": size}
         if is_favorite is not None:
-            params["isFavorite"] = str(is_favorite).lower()
+            body["isFavorite"] = is_favorite
         if is_archived is not None:
-            params["isArchived"] = str(is_archived).lower()
+            body["isArchived"] = is_archived
         if is_trashed is not None:
-            params["isTrashed"] = str(is_trashed).lower()
+            body["isTrashed"] = is_trashed
         if asset_type:
-            params["type"] = asset_type
-        return await self._request("GET", "/assets", params=params)
+            body["type"] = asset_type
+        return await self._request("POST", "/search/metadata", json=body)
 
     async def run_asset_job(self, asset_ids: list[str], name: str) -> None:
         """Queue a job for specific assets (e.g. regenerate-thumbnail)."""
