@@ -44,21 +44,33 @@ def _client(ctx: Context) -> ImmichClient:
 
 @mcp.tool()
 async def ping(ctx: Context) -> str:
-    """Check Immich server connectivity. Returns 'pong' if connected."""
+    """Check Immich server connectivity. Use this to verify the server is reachable
+    before running other operations. Read-only.
+
+    Returns: JSON with 'server' status ('pong' if healthy).
+    """
     result = await _client(ctx).ping()
     return json.dumps(result)
 
 
 @mcp.tool()
 async def get_server_version(ctx: Context) -> str:
-    """Get the Immich server version."""
+    """Get the Immich server version. Use this to check compatibility or report
+    the running server version. Read-only.
+
+    Returns: JSON with major, minor, and patch version numbers.
+    """
     result = await _client(ctx).get_server_version()
     return json.dumps(result)
 
 
 @mcp.tool()
 async def get_statistics(ctx: Context) -> str:
-    """Get library statistics: total photos, videos, and storage usage."""
+    """Get library statistics. Use this for a quick overview of library size
+    without listing individual assets. Read-only.
+
+    Returns: JSON with total photo count, video count, and storage usage in bytes.
+    """
     result = await _client(ctx).get_statistics()
     return json.dumps(result)
 
@@ -68,13 +80,15 @@ async def get_statistics(ctx: Context) -> str:
 
 @mcp.tool()
 async def update_credentials(ctx: Context, base_url: str, api_key: str) -> str:
-    """Update the Immich connection credentials. Use this when the API key
-    has been rotated or when the server URL has changed. The new credentials
-    are persisted to disk and take effect immediately — no restart required.
+    """Update the Immich connection credentials. Use this when the API key has been
+    rotated or the server URL changed. Validates credentials before applying.
+    Side effect: persists new credentials to disk and hot-swaps the live connection.
 
     Args:
-        base_url: The Immich server URL (e.g. 'https://photos.example.com').
-        api_key: A valid Immich API key.
+        base_url: Full Immich server URL including protocol (e.g. 'https://photos.example.com').
+        api_key: A valid Immich API key (generated in Immich > User Settings > API Keys).
+
+    Returns: JSON with success status, photo/video counts confirming access, and persistence path.
     """
     # 1. Create a new client with the provided credentials to validate them
     import os
@@ -151,10 +165,14 @@ async def update_credentials(ctx: Context, base_url: str, api_key: str) -> str:
 
 @mcp.tool()
 async def get_asset_info(ctx: Context, asset_id: str) -> str:
-    """Get full metadata for a specific asset (EXIF, GPS, dates, camera, etc).
+    """Get full metadata for a single asset. Use this when you need EXIF details,
+    GPS coordinates, camera info, or file properties for a known asset ID.
+    For finding assets, use search_metadata or search_smart instead. Read-only.
 
     Args:
-        asset_id: The unique ID of the asset.
+        asset_id: The asset's UUID (from search results, album listings, or list_assets).
+
+    Returns: JSON with EXIF data, GPS, dates, dimensions, file size, camera make/model, and owner.
     """
     result = await _client(ctx).get_asset(asset_id)
     return json.dumps(result, default=str)
@@ -171,17 +189,20 @@ async def update_asset_metadata(
     is_favorite: bool | None = None,
     rating: int | None = None,
 ) -> str:
-    """Update metadata for a specific asset (dates, GPS coordinates, description, etc).
-    Only provided fields are updated — omitted fields are left unchanged.
+    """Update metadata fields on a specific asset. Use this to fix dates, correct GPS,
+    add descriptions, or change favorite/rating status. Only provided fields are modified.
+    Side effect: permanently changes asset metadata in Immich.
 
     Args:
-        asset_id: The unique ID of the asset.
-        date_time_original: ISO 8601 date string (e.g. '2019-07-14T15:23:41.000Z').
-        latitude: GPS latitude (-90 to 90).
-        longitude: GPS longitude (-180 to 180).
-        description: Asset description text.
-        is_favorite: Mark as favorite.
-        rating: Rating from 1-5, or null for unrated.
+        asset_id: The asset's UUID.
+        date_time_original: ISO 8601 datetime (e.g. '2019-07-14T15:23:41.000Z').
+        latitude: GPS latitude, decimal degrees (-90.0 to 90.0).
+        longitude: GPS longitude, decimal degrees (-180.0 to 180.0).
+        description: Free-text description/caption for the asset.
+        is_favorite: Set favorite status (true/false).
+        rating: Star rating (1-5), or null to clear.
+
+    Returns: JSON with the updated asset object.
     """
     fields: dict = {}
     if date_time_original:
@@ -209,16 +230,17 @@ async def rotate_assets(
     asset_ids: list[str] | None = None,
     album_id: str = "",
 ) -> str:
-    """Rotate one or more assets. This is a non-destructive display transform —
-    the original file is never modified.
-
-    Provide EITHER asset_ids OR album_id. If album_id is given, all assets in
-    that album are rotated.
+    """Apply a non-destructive clockwise rotation to one or more assets. Use this to
+    fix orientation issues. The original file is never modified — rotation is a display
+    transform only. Use revert_asset_edits to undo. Provide EITHER asset_ids OR album_id.
+    Side effect: writes rotation edits to Immich; accumulates with existing rotation.
 
     Args:
-        angle: Rotation angle in degrees clockwise. Common values: 90, 180, 270. Default: 90.
-        asset_ids: List of asset IDs to rotate.
-        album_id: Rotate ALL assets in this album.
+        angle: Clockwise degrees, must be a multiple of 90 (90, 180, or 270). Default: 90.
+        asset_ids: List of asset UUIDs to rotate. Mutually exclusive with album_id.
+        album_id: Rotate all assets in this album. Mutually exclusive with asset_ids.
+
+    Returns: JSON with rotated/failed counts and the applied angle.
     """
     if angle % 90 != 0:
         return json.dumps({"error": "Angle must be a multiple of 90 (90, 180, 270)."})
@@ -279,14 +301,15 @@ async def revert_asset_edits(
     asset_ids: list[str] | None = None,
     album_id: str = "",
 ) -> str:
-    """Remove all non-destructive edits (rotation, crop, mirror) from assets,
-    reverting them to their original appearance.
-
-    Provide EITHER asset_ids OR album_id.
+    """Remove all non-destructive edits (rotation, crop, mirror) from assets, restoring
+    original appearance. Use this to undo rotate_assets or any other display transforms.
+    Provide EITHER asset_ids OR album_id. Side effect: deletes all edit records for the assets.
 
     Args:
-        asset_ids: List of asset IDs to revert.
-        album_id: Revert ALL assets in this album.
+        asset_ids: List of asset UUIDs to revert. Mutually exclusive with album_id.
+        album_id: Revert all assets in this album. Mutually exclusive with asset_ids.
+
+    Returns: JSON with reverted/failed counts.
     """
     client = _client(ctx)
 
@@ -327,13 +350,16 @@ async def get_map_markers(
     file_created_before: str = "",
     is_favorite: bool | None = None,
 ) -> str:
-    """Get all GPS map markers from the library. Returns asset IDs with lat/lon coordinates.
-    Use this to discover all geographic locations in the photo library.
+    """Get GPS map markers for all geotagged assets. Use this to discover where photos
+    were taken or to build travel maps. For searching by city/country name, use
+    search_metadata instead. Read-only. Returns up to 500 markers.
 
     Args:
-        file_created_after: Optional ISO date filter (e.g. '2023-01-01').
-        file_created_before: Optional ISO date filter.
-        is_favorite: Filter favorites only.
+        file_created_after: ISO date lower bound (e.g. '2023-01-01').
+        file_created_before: ISO date upper bound.
+        is_favorite: If true, only return favorites.
+
+    Returns: JSON with total count and markers array (each with asset ID, lat, lon).
     """
     result = await _client(ctx).get_map_markers(
         file_created_after=file_created_after or None,
@@ -361,21 +387,25 @@ async def search_metadata(
     page: int = 1,
     size: int = 50,
 ) -> str:
-    """Search photos by EXIF metadata: location (city/state/country), camera (make/model),
-    date range, favorites, and type (IMAGE/VIDEO).
+    """Search assets by EXIF metadata fields. Use this when you know specific criteria
+    like city, camera model, or date range. For natural language visual queries (e.g.
+    'sunset at the beach'), use search_smart instead. For browsing without criteria,
+    use list_assets. Read-only.
 
     Args:
-        city: Filter by city name (e.g. 'Barcelona', 'Cairo').
-        state: Filter by state/region.
-        country: Filter by country (e.g. 'Spain', 'Egypt').
-        make: Camera manufacturer (e.g. 'Apple', 'Canon').
-        model: Camera model (e.g. 'iPhone 14 Pro').
-        taken_after: ISO date — only photos after this date.
-        taken_before: ISO date — only photos before this date.
-        is_favorite: Filter favorites only.
-        asset_type: 'IMAGE' or 'VIDEO'.
-        page: Page number (default 1).
-        size: Results per page (default 50, max 200).
+        city: City name from EXIF GPS reverse-geocoding (case-sensitive, e.g. 'Barcelona').
+        state: State or region name.
+        country: Country name (e.g. 'Spain', 'Egypt').
+        make: Camera manufacturer (e.g. 'Apple', 'Canon', 'Sony').
+        model: Camera model string (e.g. 'iPhone 14 Pro', 'EOS R5').
+        taken_after: ISO date — return only assets captured after this date.
+        taken_before: ISO date — return only assets captured before this date.
+        is_favorite: If true, only return favorites.
+        asset_type: 'IMAGE' or 'VIDEO'. Omit for both.
+        page: Page number, starting from 1 (default 1).
+        size: Results per page (1-200, default 50).
+
+    Returns: JSON with total match count, current page, and assets array with IDs, filenames, and dates.
     """
     result = await _client(ctx).search_metadata(
         city=city or None,
@@ -408,20 +438,22 @@ async def search_smart(
     page: int = 1,
     size: int = 50,
 ) -> str:
-    """AI-powered visual search using CLIP. Describe what you're looking for
-    in natural language (e.g. 'sunset at the beach', 'birthday cake', 'mountain landscape').
-
-    Can be combined with location and date filters.
+    """AI-powered visual search using CLIP embeddings. Use this when describing what a
+    photo looks like in natural language (e.g. 'sunset at the beach', 'dog playing fetch').
+    For structured criteria (city, camera, date), use search_metadata instead. Requires
+    Immich ML service with Smart Search enabled. Read-only.
 
     Args:
-        query: Natural language description of what to find.
-        city: Optional city filter.
+        query: Natural language description of the visual content to find.
+        city: Optional city filter to narrow results geographically.
         state: Optional state/region filter.
         country: Optional country filter.
-        taken_after: ISO date — only photos after this date.
-        taken_before: ISO date — only photos before this date.
-        page: Page number (default 1).
-        size: Results per page (default 50, max 200).
+        taken_after: ISO date — only assets captured after this date.
+        taken_before: ISO date — only assets captured before this date.
+        page: Page number, starting from 1 (default 1).
+        size: Results per page (1-200, default 50).
+
+    Returns: JSON with total count, page, and assets ranked by visual similarity to the query.
     """
     try:
         result = await _client(ctx).search_smart(
@@ -457,10 +489,13 @@ async def search_smart(
 
 @mcp.tool()
 async def list_albums(ctx: Context, shared: bool | None = None) -> str:
-    """List all albums with their asset counts.
+    """List all albums in the library with summary info. Use this to discover existing
+    albums before creating new ones or to find an album ID. Read-only.
 
     Args:
-        shared: Filter by shared status. None = all albums.
+        shared: true = only shared albums, false = only non-shared, omit = all albums.
+
+    Returns: JSON with total count and albums array (each with id, name, description, assetCount, shared status).
     """
     result = await _client(ctx).list_albums(shared=shared)
     albums = [
@@ -480,10 +515,14 @@ async def list_albums(ctx: Context, shared: bool | None = None) -> str:
 
 @mcp.tool()
 async def get_album(ctx: Context, album_id: str) -> str:
-    """Get album details including all asset IDs.
+    """Get full details for a specific album including all its asset IDs. Use this to
+    inspect album contents or retrieve asset IDs for further operations (thumbnails,
+    metadata, rotation). For listing all albums, use list_albums instead. Read-only.
 
     Args:
-        album_id: The album's unique ID.
+        album_id: The album's UUID (from list_albums or create_album).
+
+    Returns: JSON with album metadata and a flat list of all asset_ids in the album.
     """
     result = await _client(ctx).get_album(album_id)
     assets = result.get("assets", [])
@@ -508,12 +547,15 @@ async def get_album(ctx: Context, album_id: str) -> str:
 async def create_album(
     ctx: Context, name: str, description: str = "", asset_ids: list[str] | None = None
 ) -> str:
-    """Create a new album.
+    """Create a new album, optionally pre-populated with assets. Use this to organize
+    photos into collections. Side effect: creates a new album in Immich.
 
     Args:
-        name: Album name (e.g. 'Roma, Italia').
-        description: Optional description.
-        asset_ids: Optional list of asset IDs to add immediately.
+        name: Album display name (e.g. 'Roma, Italia', 'Birthday 2024').
+        description: Optional album description text.
+        asset_ids: Optional list of asset UUIDs to add immediately on creation.
+
+    Returns: JSON with the new album's id, name, and asset count.
     """
     result = await _client(ctx).create_album(
         name=name, description=description, asset_ids=asset_ids
@@ -532,12 +574,15 @@ async def create_album(
 async def update_album(
     ctx: Context, album_id: str, name: str = "", description: str = ""
 ) -> str:
-    """Update an album's name or description.
+    """Update an album's name or description. Use this to rename or re-describe an
+    existing album. Side effect: modifies album metadata in Immich.
 
     Args:
-        album_id: The album's unique ID.
-        name: New name (empty = don't change).
-        description: New description (empty = don't change).
+        album_id: The album's UUID.
+        name: New album name. Leave empty to keep current name.
+        description: New description. Leave empty to keep current description.
+
+    Returns: JSON with the updated album object.
     """
     result = await _client(ctx).update_album(
         album_id=album_id,
@@ -549,10 +594,14 @@ async def update_album(
 
 @mcp.tool()
 async def delete_album(ctx: Context, album_id: str) -> str:
-    """Delete an album. Photos are NOT deleted, only the album container.
+    """Delete an album container. The photos inside are NOT deleted — they remain in
+    the library. Use this to remove unwanted album groupings. Side effect: permanently
+    deletes the album (cannot be undone).
 
     Args:
-        album_id: The album's unique ID.
+        album_id: The album's UUID to delete.
+
+    Returns: JSON with deleted confirmation and album_id.
     """
     await _client(ctx).delete_album(album_id)
     return json.dumps({"deleted": True, "album_id": album_id})
@@ -560,11 +609,15 @@ async def delete_album(ctx: Context, album_id: str) -> str:
 
 @mcp.tool()
 async def add_assets_to_album(ctx: Context, album_id: str, asset_ids: list[str]) -> str:
-    """Add photos/videos to an album.
+    """Add existing assets to an album. Use this to curate albums from search results
+    or other asset lists. Assets can belong to multiple albums simultaneously.
+    Side effect: modifies album membership.
 
     Args:
-        album_id: Target album ID.
-        asset_ids: List of asset IDs to add.
+        album_id: Target album UUID.
+        asset_ids: List of asset UUIDs to add to the album.
+
+    Returns: JSON with album_id, count added, and per-asset success/error details.
     """
     result = await _client(ctx).add_assets_to_album(album_id, asset_ids)
     return json.dumps({"album_id": album_id, "added": len(asset_ids), "result": result}, default=str)
@@ -572,11 +625,15 @@ async def add_assets_to_album(ctx: Context, album_id: str, asset_ids: list[str])
 
 @mcp.tool()
 async def remove_assets_from_album(ctx: Context, album_id: str, asset_ids: list[str]) -> str:
-    """Remove photos/videos from an album. The photos themselves are NOT deleted.
+    """Remove assets from an album without deleting them. The photos remain in the
+    library and other albums. Use this to un-curate mistakenly added assets.
+    Side effect: modifies album membership.
 
     Args:
-        album_id: Target album ID.
-        asset_ids: List of asset IDs to remove.
+        album_id: Album UUID to remove assets from.
+        asset_ids: List of asset UUIDs to remove from this album.
+
+    Returns: JSON with album_id, count removed, and per-asset result details.
     """
     result = await _client(ctx).remove_assets_from_album(album_id, asset_ids)
     return json.dumps({"album_id": album_id, "removed": len(asset_ids), "result": result}, default=str)
@@ -587,13 +644,15 @@ async def remove_assets_from_album(ctx: Context, album_id: str, asset_ids: list[
 
 @mcp.tool()
 async def get_asset_thumbnail(ctx: Context, asset_id: str, size: str = "thumbnail") -> str:
-    """Get a base64-encoded thumbnail for a single asset.
-    Returns JSON with 'data' (base64 string) and 'type' (mime type).
-    Size can be 'thumbnail' (250px, fast) or 'preview' (1440px, larger).
+    """Get a base64-encoded thumbnail image for a single asset. Use this to visually
+    inspect one photo. For multiple photos, use get_thumbnails_batch (by IDs) or
+    get_album_thumbnails (by album). Read-only.
 
     Args:
-        asset_id: The unique ID of the asset.
-        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
+        asset_id: The asset's UUID.
+        size: 'thumbnail' (250px, fast) or 'preview' (1440px, higher quality). Default: 'thumbnail'.
+
+    Returns: JSON with 'data' (base64 string) and 'type' (MIME type, e.g. 'image/jpeg').
     """
     result = await _client(ctx).get_asset_thumbnail(asset_id, size)
     return json.dumps(result)
@@ -603,14 +662,16 @@ async def get_asset_thumbnail(ctx: Context, asset_id: str, size: str = "thumbnai
 async def get_album_thumbnails(
     ctx: Context, album_id: str, size: str = "thumbnail", limit: int = 20
 ) -> str:
-    """Get base64-encoded thumbnails for all photos in an album (up to limit).
-    Returns album info and a list of thumbnail entries with asset IDs, base64 data,
-    filenames, and dates. Used for generating visual HTML galleries.
+    """Get base64-encoded thumbnails for photos in an album. Use this to generate visual
+    HTML galleries from an existing album. For thumbnails from search results (no album),
+    use get_thumbnails_batch instead. Read-only.
 
     Args:
-        album_id: The album's unique ID.
-        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
-        limit: Maximum number of thumbnails to fetch (default 20, max 50).
+        album_id: The album's UUID.
+        size: 'thumbnail' (250px) or 'preview' (1440px). Default: 'thumbnail'.
+        limit: Max thumbnails to return (1-50, default 20).
+
+    Returns: JSON with album info and thumbnails array (each with asset_id, base64 data, filename, date).
     """
     result = await _client(ctx).get_album_thumbnails(
         album_id, size, min(limit, 50)
@@ -622,15 +683,16 @@ async def get_album_thumbnails(
 async def get_thumbnails_batch(
     ctx: Context, asset_ids: list[str], size: str = "thumbnail", limit: int = 20
 ) -> str:
-    """Get base64-encoded thumbnails for a list of asset IDs WITHOUT needing an album.
-    Use this when you have search results (asset IDs) and want to display them visually
-    without creating a temporary album. Returns thumbnail entries with asset IDs, base64 data,
-    filenames, and dates.
+    """Get base64-encoded thumbnails for arbitrary asset IDs without needing an album.
+    Use this to visually display search results or any ad-hoc set of photos. For album-based
+    thumbnails, use get_album_thumbnails. For a single photo, use get_asset_thumbnail. Read-only.
 
     Args:
-        asset_ids: List of asset IDs to fetch thumbnails for.
-        size: 'thumbnail' (250px) or 'preview' (1440px). Default: thumbnail.
-        limit: Maximum number of thumbnails to fetch (default 20, max 50).
+        asset_ids: List of asset UUIDs to fetch thumbnails for.
+        size: 'thumbnail' (250px) or 'preview' (1440px). Default: 'thumbnail'.
+        limit: Max thumbnails to return (1-50, default 20). Only the first N IDs are fetched.
+
+    Returns: JSON with thumbnails array (each with asset_id, base64 data, filename, date).
     """
     result = await _client(ctx).get_thumbnails_batch(
         asset_ids, size, min(limit, 50)
@@ -643,7 +705,11 @@ async def get_thumbnails_batch(
 
 @mcp.tool()
 async def list_shared_links(ctx: Context) -> str:
-    """List all shared links (public URLs for albums/assets)."""
+    """List all shared links (public gallery URLs). Use this to see what's currently
+    shared publicly or to find a link ID for updates/deletion. Read-only.
+
+    Returns: JSON with total count and links array (each with id, key, type, description, album info).
+    """
     result = await _client(ctx).list_shared_links()
     links = [
         {
@@ -667,14 +733,17 @@ async def create_shared_link(
     show_metadata: bool = True,
     description: str = "",
 ) -> str:
-    """Create a public shared link for an album. This makes the album visible
-    in the Immich Gallery frontend.
+    """Create a public shared link for an album, making it accessible via URL without
+    authentication. Use this to publish a gallery for external viewing.
+    Side effect: creates a publicly accessible URL.
 
     Args:
-        album_id: The album to share.
-        allow_download: Allow visitors to download photos.
-        show_metadata: Show EXIF metadata to visitors.
-        description: Optional link description.
+        album_id: The album UUID to share publicly.
+        allow_download: Allow visitors to download original files (default true).
+        show_metadata: Show EXIF data to visitors (default true).
+        description: Optional human-readable description for the link.
+
+    Returns: JSON with link id, key, album_id, and the full shareable URL.
     """
     result = await _client(ctx).create_shared_link(
         album_id=album_id,
@@ -695,10 +764,13 @@ async def create_shared_link(
 
 @mcp.tool()
 async def get_shared_link(ctx: Context, link_id: str) -> str:
-    """Get full details of a shared link including permissions and assets.
+    """Get full details of a shared link including permissions, expiry, and linked assets.
+    Use this to inspect a specific link's configuration. Read-only.
 
     Args:
-        link_id: The shared link's unique ID (from list_shared_links).
+        link_id: The shared link's UUID (from list_shared_links).
+
+    Returns: JSON with link details, permissions, expiry date, and associated assets/album.
     """
     try:
         result = await _client(ctx).get_shared_link(link_id)
@@ -717,15 +789,18 @@ async def update_shared_link(
     description: str | None = None,
     expiry_at: str | None = None,
 ) -> str:
-    """Update a shared link's permissions or expiry.
+    """Update a shared link's permissions or expiry. Use this to tighten/loosen access
+    or set an expiration date. Side effect: changes public link behavior immediately.
 
     Args:
-        link_id: The shared link's unique ID.
-        allow_download: Allow visitors to download photos.
-        show_metadata: Show EXIF metadata to visitors.
-        allow_upload: Allow visitors to upload photos.
-        description: Link description. Pass empty string to clear.
-        expiry_at: Expiry date (ISO 8601). Pass empty string to remove expiry.
+        link_id: The shared link's UUID.
+        allow_download: Allow visitors to download original files.
+        show_metadata: Show EXIF data to visitors.
+        allow_upload: Allow visitors to upload photos to the shared album.
+        description: Link description. Empty string clears it.
+        expiry_at: ISO 8601 expiry datetime. Empty string removes expiry (link never expires).
+
+    Returns: JSON with the updated shared link object.
     """
     fields: dict = {}
     if allow_download is not None:
@@ -749,10 +824,13 @@ async def update_shared_link(
 
 @mcp.tool()
 async def delete_shared_link(ctx: Context, link_id: str) -> str:
-    """Delete (revoke) a shared link. The link will no longer be accessible.
+    """Delete (revoke) a shared link, making the public URL immediately inaccessible.
+    The album and its photos are unaffected. Side effect: permanently removes the link.
 
     Args:
-        link_id: The shared link's unique ID.
+        link_id: The shared link's UUID to delete.
+
+    Returns: JSON with deleted confirmation and link_id.
     """
     try:
         await _client(ctx).delete_shared_link(link_id)
@@ -763,10 +841,11 @@ async def delete_shared_link(ctx: Context, link_id: str) -> str:
 
 @mcp.tool()
 async def get_connection_info(ctx: Context) -> str:
-    """Return the Immich base URL and a masked API key.  Used by skills to
-    populate the {{IMMICH_URL}} placeholder in gallery templates.  The API
-    key is intentionally masked — thumbnails are delivered as base64 data
-    URIs, so the plaintext key is never needed in generated HTML.
+    """Return the Immich base URL and a masked API key. Use this to populate gallery
+    template placeholders (e.g. {{IMMICH_URL}}). The API key is intentionally masked
+    for security — thumbnails use base64 data URIs, not direct API calls. Read-only.
+
+    Returns: JSON with base_url and api_key_masked (first 8 + last 4 chars only).
     """
     client = _client(ctx)
     key = client.api_key
@@ -784,12 +863,16 @@ async def get_connection_info(ctx: Context) -> str:
 async def list_people(
     ctx: Context, page: int = 1, size: int = 50, with_hidden: bool = False
 ) -> str:
-    """List all recognized people in the library (paginated).
+    """List all recognized people (face clusters) in the library. Use this to browse
+    who appears in the photo library or find a person's ID. For searching by name,
+    use search_people instead. Read-only.
 
     Args:
-        page: Page number (default 1).
+        page: Page number, starting from 1 (default 1).
         size: Results per page (default 50).
-        with_hidden: Include hidden people (default False).
+        with_hidden: Include people marked as hidden (default false).
+
+    Returns: JSON with total count, page, and people array (each with id, name, thumbnailPath, photoCount).
     """
     result = await _client(ctx).list_people(page=page, size=size, with_hidden=with_hidden)
     people = result.get("people", [])
@@ -799,10 +882,13 @@ async def list_people(
 
 @mcp.tool()
 async def get_person(ctx: Context, person_id: str) -> str:
-    """Get full details for a specific person.
+    """Get full details for a specific person including name, birth date, and photo count.
+    Use this after finding a person via list_people or search_people. Read-only.
 
     Args:
-        person_id: The person's unique ID.
+        person_id: The person's UUID (from list_people or search_people).
+
+    Returns: JSON with person details (id, name, birthDate, isHidden, photoCount, thumbnailPath).
     """
     result = await _client(ctx).get_person(person_id)
     return json.dumps(result, default=str)
@@ -819,16 +905,20 @@ async def update_person(
     feature_face_asset_id: str = "",
     color: str = "",
 ) -> str:
-    """Update a person's details. Only provided fields are changed.
+    """Update a person's profile details. Use this to name unnamed faces, set birth dates,
+    hide clutter faces, or change the representative thumbnail. Only provided fields are
+    modified. Side effect: changes person metadata in Immich.
 
     Args:
-        person_id: The person's unique ID.
-        name: Display name for this person.
-        birth_date: Birth date in ISO format (e.g. '1990-05-15').
-        is_hidden: Hide this person from the People view.
-        is_favorite: Mark this person as a favorite.
-        feature_face_asset_id: Asset ID to use as the person's feature face.
-        color: Color label for this person.
+        person_id: The person's UUID.
+        name: Display name (e.g. 'John Smith'). Set to name unnamed face clusters.
+        birth_date: ISO date (e.g. '1990-05-15').
+        is_hidden: Hide from the People view (useful for strangers/clutter).
+        is_favorite: Mark as a favorite person.
+        feature_face_asset_id: Asset UUID whose face crop becomes the person's thumbnail.
+        color: Hex color label for UI grouping.
+
+    Returns: JSON with the updated person object.
     """
     fields: dict = {}
     if name:
@@ -851,13 +941,15 @@ async def update_person(
 
 @mcp.tool()
 async def merge_people(ctx: Context, person_id: str, merge_ids: list[str]) -> str:
-    """Merge multiple people into one. DESTRUCTIVE: the people in merge_ids
-    are permanently absorbed into person_id. All their face assignments are
-    transferred to the target person. This cannot be undone.
+    """Merge multiple person clusters into one. Use this when the same real person has
+    been split into multiple face clusters. DESTRUCTIVE and IRREVERSIBLE: merged persons
+    are permanently deleted and all their faces transfer to the target.
 
     Args:
-        person_id: The target person to keep (all faces merge into this person).
-        merge_ids: List of person IDs to merge into the target. These people will cease to exist.
+        person_id: The target person UUID to keep (receives all merged faces).
+        merge_ids: List of person UUIDs to absorb into the target. These persons are permanently deleted.
+
+    Returns: JSON with merge result details.
     """
     result = await _client(ctx).merge_people(person_id, merge_ids)
     return json.dumps(result, default=str)
@@ -865,11 +957,14 @@ async def merge_people(ctx: Context, person_id: str, merge_ids: list[str]) -> st
 
 @mcp.tool()
 async def search_people(ctx: Context, name: str, with_hidden: bool = False) -> str:
-    """Search for people by name.
+    """Search for people by name (partial match). Use this when you know the person's
+    name. For browsing all people, use list_people instead. Read-only.
 
     Args:
-        name: Name or partial name to search for.
-        with_hidden: Include hidden people in results (default False).
+        name: Full or partial name to match (case-insensitive).
+        with_hidden: Include hidden people in results (default false).
+
+    Returns: JSON array of matching people with id, name, and photo count.
     """
     result = await _client(ctx).search_people(name, with_hidden=with_hidden)
     return json.dumps(result, default=str)
@@ -877,11 +972,13 @@ async def search_people(ctx: Context, name: str, with_hidden: bool = False) -> s
 
 @mcp.tool()
 async def get_person_thumbnail(ctx: Context, person_id: str) -> str:
-    """Get a base64-encoded face thumbnail for a person.
-    Returns JSON with 'data' (base64 string) and 'type' (mime type).
+    """Get a base64-encoded face crop thumbnail for a person. Use this to visually
+    identify a person before merging or renaming. Read-only.
 
     Args:
-        person_id: The person's unique ID.
+        person_id: The person's UUID.
+
+    Returns: JSON with 'data' (base64 string of face crop) and 'type' (MIME type).
     """
     result = await _client(ctx).get_person_thumbnail(person_id)
     return json.dumps(result)
@@ -889,10 +986,13 @@ async def get_person_thumbnail(ctx: Context, person_id: str) -> str:
 
 @mcp.tool()
 async def get_asset_faces(ctx: Context, asset_id: str) -> str:
-    """Get all detected faces in a specific asset, with their person assignments.
+    """Get all detected faces in a photo with their person assignments. Use this to see
+    who is in a specific photo or to find face IDs for reassign_face. Read-only.
 
     Args:
-        asset_id: The asset's unique ID.
+        asset_id: The asset's UUID.
+
+    Returns: JSON array of face detections (each with face_id, person_id, person_name, bounding box).
     """
     result = await _client(ctx).get_asset_faces(asset_id)
     return json.dumps(result, default=str)
@@ -900,12 +1000,15 @@ async def get_asset_faces(ctx: Context, asset_id: str) -> str:
 
 @mcp.tool()
 async def reassign_face(ctx: Context, face_id: str, person_id: str) -> str:
-    """Reassign a detected face to a different person. Use this to correct
-    face recognition mistakes.
+    """Reassign a detected face to a different person. Use this to correct face recognition
+    mistakes (e.g. a face wrongly attributed to Person A should be Person B). Get face_id
+    from get_asset_faces first. Side effect: permanently changes face-to-person mapping.
 
     Args:
-        face_id: The face detection ID (from get_asset_faces).
-        person_id: The person to assign this face to.
+        face_id: The face detection UUID (from get_asset_faces results).
+        person_id: The correct person UUID to assign this face to.
+
+    Returns: JSON with the updated face assignment.
     """
     result = await _client(ctx).reassign_face(face_id, person_id)
     return json.dumps(result, default=str)
@@ -916,14 +1019,15 @@ async def reassign_face(ctx: Context, face_id: str, person_id: str) -> str:
 
 @mcp.tool()
 async def delete_assets(ctx: Context, asset_ids: list[str], force: bool = False) -> str:
-    """Delete assets by moving them to trash, or permanently delete them.
-
-    By default (force=False), assets are moved to trash and can be restored.
-    With force=True, assets are PERMANENTLY DELETED and cannot be recovered.
+    """Delete assets (soft-delete to trash or permanent). Use this to remove unwanted
+    photos/videos. Default is soft-delete (recoverable via restore_assets). With force=true,
+    deletion is PERMANENT and IRREVERSIBLE. Side effect: moves/deletes assets.
 
     Args:
-        asset_ids: List of asset IDs to delete.
-        force: If True, permanently delete. If False (default), move to trash.
+        asset_ids: List of asset UUIDs to delete.
+        force: false (default) = move to trash (recoverable). true = PERMANENTLY delete (no undo).
+
+    Returns: JSON with count deleted and whether force was used.
     """
     await _client(ctx).delete_assets(asset_ids, force=force)
     return json.dumps({
@@ -935,8 +1039,12 @@ async def delete_assets(ctx: Context, asset_ids: list[str], force: bool = False)
 
 @mcp.tool()
 async def empty_trash(ctx: Context) -> str:
-    """Permanently delete ALL assets currently in the trash.
-    WARNING: This is IRREVERSIBLE. All trashed assets will be permanently destroyed.
+    """Permanently delete ALL assets currently in trash. DESTRUCTIVE and IRREVERSIBLE.
+    Use this only after confirming the user wants to purge all trashed items. For
+    deleting specific assets, use delete_assets instead. Side effect: permanently
+    destroys all trashed assets and frees storage.
+
+    Returns: JSON with success confirmation.
     """
     await _client(ctx).empty_trash()
     return json.dumps({"success": True, "warning": "All trashed assets have been permanently deleted."})
@@ -944,17 +1052,26 @@ async def empty_trash(ctx: Context) -> str:
 
 @mcp.tool()
 async def restore_trash(ctx: Context) -> str:
-    """Restore ALL trashed assets back to the library."""
+    """Restore ALL trashed assets back to the library. Use this to undo an accidental
+    bulk deletion. For restoring specific assets only, use restore_assets instead.
+    Side effect: moves all trashed assets back to the active library.
+
+    Returns: JSON with success confirmation.
+    """
     await _client(ctx).restore_trash()
     return json.dumps({"success": True, "message": "All trashed assets have been restored."})
 
 
 @mcp.tool()
 async def restore_assets(ctx: Context, asset_ids: list[str]) -> str:
-    """Restore specific assets from trash back to the library.
+    """Restore specific assets from trash back to the active library. Use this to
+    selectively recover accidentally deleted photos. For restoring everything at once,
+    use restore_trash instead. Side effect: moves specified assets out of trash.
 
     Args:
-        asset_ids: List of asset IDs to restore from trash.
+        asset_ids: List of asset UUIDs currently in trash to restore.
+
+    Returns: JSON with count of restored assets.
     """
     await _client(ctx).restore_assets(asset_ids)
     return json.dumps({"restored": len(asset_ids)})
@@ -965,9 +1082,10 @@ async def restore_assets(ctx: Context, asset_ids: list[str]) -> str:
 
 @mcp.tool()
 async def get_duplicates(ctx: Context) -> str:
-    """Get all ML-detected duplicate asset groups. Immich uses machine learning
-    to identify visually similar photos. Returns groups of duplicate assets
-    with similarity scores.
+    """Get all ML-detected duplicate asset groups. Use this to review potential duplicates
+    before resolving them with resolve_duplicates. Requires Immich ML service. Read-only.
+
+    Returns: JSON array of duplicate groups (each with duplicateId, assets array, and similarity scores).
     """
     result = await _client(ctx).get_duplicates()
     return json.dumps(result, default=str)
@@ -975,15 +1093,14 @@ async def get_duplicates(ctx: Context) -> str:
 
 @mcp.tool()
 async def resolve_duplicates(ctx: Context, groups: list[dict]) -> str:
-    """Resolve duplicate groups by specifying which assets to keep and which to trash.
-
-    Each group dict must contain:
-    - duplicateId: The duplicate group ID (from get_duplicates)
-    - assetIds: List of asset IDs to KEEP
-    - trashIds: List of asset IDs to move to TRASH
+    """Resolve duplicate groups by choosing which assets to keep and which to trash.
+    Use this after reviewing results from get_duplicates. Trashed assets can still be
+    recovered via restore_assets. Side effect: moves rejected duplicates to trash.
 
     Args:
-        groups: List of resolution decisions, each with duplicateId, assetIds (keep), and trashIds (trash).
+        groups: List of dicts, each with: duplicateId (from get_duplicates), assetIds (UUIDs to KEEP), trashIds (UUIDs to TRASH).
+
+    Returns: JSON with count of resolved groups.
     """
     await _client(ctx).resolve_duplicates(groups)
     return json.dumps({
@@ -997,7 +1114,11 @@ async def resolve_duplicates(ctx: Context, groups: list[dict]) -> str:
 
 @mcp.tool()
 async def list_tags(ctx: Context) -> str:
-    """List all tags with their IDs, names, and colors."""
+    """List all tags in the library. Use this to discover existing tags before creating
+    new ones or to find a tag ID for tagging operations. Read-only.
+
+    Returns: JSON with total count and tags array (each with id, name, color).
+    """
     try:
         result = await _client(ctx).list_tags()
         return json.dumps({"total": len(result), "tags": result}, default=str)
@@ -1007,10 +1128,12 @@ async def list_tags(ctx: Context) -> str:
 
 @mcp.tool()
 async def get_tag(ctx: Context, tag_id: str) -> str:
-    """Get details for a specific tag.
+    """Get details for a specific tag. Use this to inspect a tag's properties. Read-only.
 
     Args:
-        tag_id: The tag's unique ID.
+        tag_id: The tag's UUID (from list_tags).
+
+    Returns: JSON with tag id, name, color, and usage count.
     """
     try:
         result = await _client(ctx).get_tag(tag_id)
@@ -1021,11 +1144,14 @@ async def get_tag(ctx: Context, tag_id: str) -> str:
 
 @mcp.tool()
 async def create_tag(ctx: Context, name: str, color: str = "") -> str:
-    """Create a new tag.
+    """Create a new tag for categorizing assets. Use list_tags first to avoid duplicates.
+    Side effect: creates a new tag in Immich.
 
     Args:
-        name: Tag name (e.g. 'Vacation', 'Family', 'Work').
-        color: Optional hex color (e.g. '#FF5733').
+        name: Tag display name (e.g. 'Vacation', 'Family', 'Work'). Must be unique.
+        color: Optional hex color for the tag (e.g. '#FF5733').
+
+    Returns: JSON with the new tag's id, name, and color.
     """
     try:
         result = await _client(ctx).create_tag(name, color=color or None)
@@ -1036,12 +1162,14 @@ async def create_tag(ctx: Context, name: str, color: str = "") -> str:
 
 @mcp.tool()
 async def update_tag(ctx: Context, tag_id: str, name: str | None = None, color: str | None = None) -> str:
-    """Update a tag's name or color.
+    """Update a tag's name or color. Side effect: changes apply to all assets using this tag.
 
     Args:
-        tag_id: The tag's unique ID.
-        name: New name. Omit to leave unchanged.
-        color: New hex color. Omit to leave unchanged.
+        tag_id: The tag's UUID.
+        name: New tag name. Omit to keep current.
+        color: New hex color (e.g. '#FF5733'). Omit to keep current.
+
+    Returns: JSON with the updated tag object.
     """
     fields: dict = {}
     if name is not None:
@@ -1059,10 +1187,13 @@ async def update_tag(ctx: Context, tag_id: str, name: str | None = None, color: 
 
 @mcp.tool()
 async def delete_tag(ctx: Context, tag_id: str) -> str:
-    """Delete a tag. The tag is removed from all assets.
+    """Delete a tag and remove it from all assets. The assets themselves are unaffected.
+    Side effect: permanently deletes the tag (cannot be undone).
 
     Args:
-        tag_id: The tag's unique ID.
+        tag_id: The tag's UUID to delete.
+
+    Returns: JSON with deleted confirmation and tag_id.
     """
     try:
         await _client(ctx).delete_tag(tag_id)
@@ -1073,11 +1204,14 @@ async def delete_tag(ctx: Context, tag_id: str) -> str:
 
 @mcp.tool()
 async def tag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
-    """Add a tag to multiple assets.
+    """Apply a tag to multiple assets at once. Use this to bulk-categorize photos
+    (e.g. tag all vacation photos). Side effect: adds tag association to assets.
 
     Args:
-        tag_id: The tag to apply.
-        asset_ids: List of asset IDs to tag.
+        tag_id: The tag UUID to apply (from list_tags or create_tag).
+        asset_ids: List of asset UUIDs to tag. Must not be empty.
+
+    Returns: JSON with tag_id, count tagged, and per-asset results.
     """
     if not asset_ids:
         return json.dumps({"error": "asset_ids cannot be empty."})
@@ -1090,11 +1224,14 @@ async def tag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
 
 @mcp.tool()
 async def untag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
-    """Remove a tag from multiple assets.
+    """Remove a tag from multiple assets. The tag itself remains; only the association is
+    removed. Side effect: removes tag-to-asset links.
 
     Args:
-        tag_id: The tag to remove.
-        asset_ids: List of asset IDs to untag.
+        tag_id: The tag UUID to remove from assets.
+        asset_ids: List of asset UUIDs to untag. Must not be empty.
+
+    Returns: JSON with tag_id, count untagged, and per-asset results.
     """
     if not asset_ids:
         return json.dumps({"error": "asset_ids cannot be empty."})
@@ -1114,14 +1251,16 @@ MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25MB
 
 @mcp.tool()
 async def upload_asset(ctx: Context, file_path: str, album_id: str = "") -> str:
-    """Upload a photo or video to Immich from a local file.
-
-    Limits: 25MB max, media files only (jpg, png, heic, mp4, mov, gif, webp).
-    The original file is not modified or deleted.
+    """Upload a local photo or video file to Immich. Use this to ingest new media into
+    the library. Constraints: max 25MB, allowed types: jpg, jpeg, png, heic, mp4, mov,
+    gif, webp. Symlinks are rejected for security. The original file is NOT modified or
+    deleted. Side effect: creates a new asset in Immich.
 
     Args:
-        file_path: Absolute path to the file to upload.
-        album_id: Optional album ID to add the asset to after upload.
+        file_path: Absolute path to the local file (e.g. '/tmp/photo.jpg'). Must exist.
+        album_id: Optional album UUID to add the uploaded asset to immediately.
+
+    Returns: JSON with new asset id, filename, size_mb, and album assignment status if applicable.
     """
     import os
 
@@ -1173,16 +1312,19 @@ async def list_assets(
     page: int = 1,
     size: int = 50,
 ) -> str:
-    """List assets with optional filters. Unlike search, this returns all assets
-    matching the filter criteria without a search query.
+    """List assets with simple filters (no search query needed). Use this to browse
+    the library by status (favorites, archived, trashed) or type. For finding specific
+    content, use search_metadata (structured) or search_smart (visual AI). Read-only.
 
     Args:
-        is_favorite: Filter by favorites only.
-        is_archived: Filter by archived status.
-        is_trashed: Filter by trashed status.
-        asset_type: 'IMAGE' or 'VIDEO'.
-        page: Page number (default 1).
-        size: Results per page (default 50, max 200).
+        is_favorite: true = only favorites, false = only non-favorites, omit = all.
+        is_archived: true = only archived, false = only non-archived, omit = all.
+        is_trashed: true = only trashed items, false = only active, omit = all.
+        asset_type: 'IMAGE' or 'VIDEO'. Omit for both.
+        page: Page number, starting from 1 (default 1).
+        size: Results per page (1-200, default 50).
+
+    Returns: JSON with total count, current page, and assets array with IDs, filenames, dates, and types.
     """
     try:
         result = await _client(ctx).list_assets(
