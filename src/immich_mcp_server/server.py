@@ -1013,6 +1013,52 @@ async def untag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
     return json.dumps({"tag_id": tag_id, "untagged": len(asset_ids), "result": result}, default=str)
 
 
+# ── Upload ─────────────────────────────────────────────────
+
+
+ALLOWED_UPLOAD_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic", ".mp4", ".mov", ".gif", ".webp"}
+MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25MB
+
+
+@mcp.tool()
+async def upload_asset(ctx: Context, file_path: str, album_id: str = "") -> str:
+    """Upload a photo or video to Immich from a local file.
+
+    Limits: 25MB max, media files only (jpg, png, heic, mp4, mov, gif, webp).
+    The original file is not modified or deleted.
+
+    Args:
+        file_path: Absolute path to the file to upload.
+        album_id: Optional album ID to add the asset to after upload.
+    """
+    import os
+
+    if not os.path.isfile(file_path):
+        return json.dumps({"error": f"File not found: {file_path}"})
+
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        return json.dumps({"error": f"Unsupported file type: {ext}. Allowed: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}"})
+
+    size = os.path.getsize(file_path)
+    if size > MAX_UPLOAD_SIZE:
+        return json.dumps({"error": f"File too large: {size / 1024 / 1024:.1f}MB. Max: 25MB."})
+
+    client = _client(ctx)
+    result = await client.upload_asset(file_path)
+
+    if album_id and result.get("id"):
+        try:
+            await client.add_assets_to_album(album_id, [result["id"]])
+            result["added_to_album"] = album_id
+        except Exception as e:
+            result["album_error"] = str(e)
+
+    result["uploaded_file"] = os.path.basename(file_path)
+    result["size_mb"] = round(size / 1024 / 1024, 2)
+    return json.dumps(result, default=str)
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()
