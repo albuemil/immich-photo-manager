@@ -438,6 +438,14 @@ class ImmichClient:
         """Delete a shared link."""
         await self._request("DELETE", f"/shared-links/{link_id}")
 
+    async def get_shared_link(self, link_id: str) -> dict:
+        """Get details of a shared link."""
+        return await self._request("GET", f"/shared-links/{link_id}")
+
+    async def update_shared_link(self, link_id: str, **fields) -> dict:
+        """Update a shared link."""
+        return await self._request("PATCH", f"/shared-links/{link_id}", json=fields)
+
     # ── People & Faces ─────────────────────────────────────
 
     async def list_people(
