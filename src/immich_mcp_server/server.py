@@ -1059,6 +1059,43 @@ async def upload_asset(ctx: Context, file_path: str, album_id: str = "") -> str:
     return json.dumps(result, default=str)
 
 
+# ── Asset List ─────────────────────────────────────────────
+
+
+@mcp.tool()
+async def list_assets(
+    ctx: Context,
+    is_favorite: bool | None = None,
+    is_archived: bool | None = None,
+    is_trashed: bool | None = None,
+    asset_type: str = "",
+    page: int = 1,
+    size: int = 50,
+) -> str:
+    """List assets with optional filters. Unlike search, this returns all assets
+    matching the filter criteria without a search query.
+
+    Args:
+        is_favorite: Filter by favorites only.
+        is_archived: Filter by archived status.
+        is_trashed: Filter by trashed status.
+        asset_type: 'IMAGE' or 'VIDEO'.
+        page: Page number (default 1).
+        size: Results per page (default 50, max 200).
+    """
+    result = await _client(ctx).list_assets(
+        is_favorite=is_favorite,
+        is_archived=is_archived,
+        is_trashed=is_trashed,
+        asset_type=asset_type or None,
+        page=page,
+        size=min(size, 200),
+    )
+    if isinstance(result, list):
+        return json.dumps({"total": len(result), "page": page, "assets": result}, default=str)
+    return json.dumps(result, default=str)
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()

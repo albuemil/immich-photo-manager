@@ -144,6 +144,27 @@ class ImmichClient:
         """Update asset metadata (dates, GPS, description, etc)."""
         return await self._request("PUT", f"/assets/{asset_id}", json=fields)
 
+    async def list_assets(
+        self,
+        is_favorite: bool | None = None,
+        is_archived: bool | None = None,
+        is_trashed: bool | None = None,
+        asset_type: str | None = None,
+        page: int = 1,
+        size: int = 100,
+    ) -> list[dict]:
+        """List assets with optional filters."""
+        params: dict = {"page": str(page), "size": str(size)}
+        if is_favorite is not None:
+            params["isFavorite"] = str(is_favorite).lower()
+        if is_archived is not None:
+            params["isArchived"] = str(is_archived).lower()
+        if is_trashed is not None:
+            params["isTrashed"] = str(is_trashed).lower()
+        if asset_type:
+            params["type"] = asset_type
+        return await self._request("GET", "/assets", params=params)
+
     async def run_asset_job(self, asset_ids: list[str], name: str) -> None:
         """Queue a job for specific assets (e.g. regenerate-thumbnail)."""
         await self._request(
