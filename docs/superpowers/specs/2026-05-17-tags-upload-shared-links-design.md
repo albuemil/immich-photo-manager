@@ -28,9 +28,16 @@ All tag operations via Immich REST API `/tags` endpoints.
 |------|--------|----------|-----------|---------|
 | `upload_asset` | POST | `/assets` (multipart) | `file_path`, `album_id` (optional) | Asset ID, checksum, duplicate status |
 
-**Security:** File path must be absolute. No directory traversal. File must exist and be readable. Max size enforced by Immich server. If `album_id` provided, asset is added to album after upload.
+**Limits:**
+- 25MB max file size (enforced before upload, not by Immich)
+- Extension filter: `.jpg`, `.jpeg`, `.png`, `.heic`, `.mp4`, `.mov`, `.gif`, `.webp` only
+- File must exist and be readable
+- No directory restriction (Claude already has full filesystem access via Read tool)
+- Tool output logs filename and size so the user sees what's being uploaded
 
-**Implementation:** Read file from disk, construct multipart form with `assetData` field, include `deviceAssetId` (filename), `deviceId` ("MCP Upload"), `fileCreatedAt` and `fileModifiedAt` from file stat.
+**Why no directory lock:** Claude Code already has full filesystem access. The destination is the user's own self-hosted Immich. Immich rejects non-media files server-side. A directory restriction adds friction with no real security gain.
+
+**Implementation:** Read file from disk, check size and extension, construct multipart form with `assetData` field, include `deviceAssetId` (filename), `deviceId` ("MCP Upload"), `fileCreatedAt` and `fileModifiedAt` from file stat. If `album_id` provided, add asset to album after upload.
 
 ### Asset List (1 tool) — ASSETS CATEGORY
 
