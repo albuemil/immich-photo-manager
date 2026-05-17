@@ -75,7 +75,7 @@ Model:  gemma4-26b-it (local, LM Studio)
 Query:  "Show me my Lanzarote albums"
 
 1. Getting MCP tool schemas...
-   38 MCP tools available
+   50 MCP tools available
 
 2. Asking Gemma 4...
    Gemma 4 chose: list_albums({})
@@ -120,6 +120,7 @@ RESULT: Zero cloud dependency — fully self-hosted stack.
 - **People & face management** — list, search, merge, and organize recognized people; reassign misidentified faces; view face thumbnails
 - **Trash & asset lifecycle** — safely delete assets to trash, permanently remove, restore from trash; complete asset lifecycle management
 - **Library health** — one command for asset inventory, metadata quality, storage breakdown, and recommendations
+- **Tags & organization** — create, apply, and manage tags across your library; bulk tag and untag assets
 - **Interactive galleries** — self-contained HTML pages with embedded thumbnails, 3 themes, 4 view modes, and a Cowork Actions Panel for batch operations
 
 <p align="center"><img src="./assets/screenshot-03-gallery-selection.png" alt="Interactive gallery with Cowork Actions" width="700"></p>
@@ -140,6 +141,7 @@ Immich is excellent at storing and viewing your photos. But managing a large lib
 | 🔧 | Edit EXIF one file at a time | **Metadata repair** — batch-fix timestamps, infer GPS, correct timezones |
 | 📊 | Query database, build reports | **Library health** — one command for metadata quality, storage, recommendations |
 | 🔄 | Rotate one photo at a time | **Bulk rotation** — rotate entire albums at once, non-destructive |
+| 🏷️ | No tag management in UI | **Tags** — create, bulk apply/remove across assets |
 | 🛡️ | Manual review of every action | **Safety first** — shows findings, asks before acting |
 
 ---
@@ -150,7 +152,7 @@ Immich is excellent at storing and viewing your photos. But managing a large lib
 |----------|-------------|
 | **[Getting Started](doc/GETTING-STARTED.md)** | Installation, manual MCP setup, deployment options, and troubleshooting |
 | **[Skills Reference](doc/SKILLS.md)** | All 12 skills — workflows, triggers, parameters, output formats |
-| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 38 MCP tools — parameters, return types, examples |
+| **[MCP Tools Reference](doc/MCP-TOOLS.md)** | All 50 MCP tools — parameters, return types, examples |
 | **[Architecture](doc/ARCHITECTURE.md)** | How base64-embedded thumbnails solve the Cowork sandbox restriction |
 | **[CORS Setup Guide](doc/CORS-SETUP.md)** | Optional — enable direct URL thumbnail loading for browser-viewed galleries |
 

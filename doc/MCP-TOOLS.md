@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-The Immich Photo Manager MCP server exposes 38 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
+The Immich Photo Manager MCP server exposes 50 tools that Claude can use to interact with your Immich instance. These tools are the building blocks that all skills use internally.
 
 ---
 
@@ -14,7 +14,7 @@ The Immich Photo Manager MCP server exposes 38 tools that Claude can use to inte
 | `get_server_version` | Get Immich server version | Version string |
 | `get_statistics` | Get library-wide statistics | Photo count, video count, storage used |
 
-### Assets (5)
+### Assets (7)
 
 | Tool | Description | Returns |
 |------|-------------|---------|
@@ -23,6 +23,8 @@ The Immich Photo Manager MCP server exposes 38 tools that Claude can use to inte
 | `rotate_assets` | Rotate assets by album or IDs (90°, 180°, 270°) — non-destructive | Count of rotated/failed assets |
 | `revert_asset_edits` | Remove all edits (rotation, crop, mirror) from assets — revert to original | Count of reverted/failed assets |
 | `get_map_markers` | Get GPS markers for all geotagged assets | Array of {lat, lng, id} for mapping |
+| `upload_asset` | Upload a local file to Immich (25MB limit, extension filter, optional album) | Uploaded asset object with ID |
+| `list_assets` | List assets with filters (favorites, archived, trashed, type) | Paginated asset list |
 
 ### Search (2)
 
@@ -72,12 +74,15 @@ The Immich Photo Manager MCP server exposes 38 tools that Claude can use to inte
 | `add_assets_to_album` | Add assets to an album by ID | Yes |
 | `remove_assets_from_album` | Remove assets from an album (photos stay in library) | Yes |
 
-### Sharing (2)
+### Sharing (5)
 
 | Tool | Description | Modifies? |
 |------|-------------|-----------|
 | `list_shared_links` | List all shared links | No |
 | `create_shared_link` | Create a public link for an album | Yes |
+| `get_shared_link` | Get details of a specific shared link | No |
+| `update_shared_link` | Update shared link settings (expiry, password, permissions) | Yes |
+| `delete_shared_link` | Delete a shared link (revokes access) | Yes |
 
 ### Thumbnails (3)
 
@@ -122,6 +127,18 @@ The Immich Photo Manager MCP server exposes 38 tools that Claude can use to inte
 |------|-------------|-----------|
 | `get_duplicates` | Get all ML-detected duplicate groups with similarity scores | No |
 | `resolve_duplicates` | Resolve duplicate groups — specify which to keep, which to trash | Yes |
+
+### Tags (7)
+
+| Tool | Description | Modifies? |
+|------|-------------|-----------|
+| `list_tags` | List all tags with IDs, names, colors | No |
+| `get_tag` | Get tag details | No |
+| `create_tag` | Create a new tag with name and optional color | Yes |
+| `update_tag` | Update tag name or color | Yes |
+| `delete_tag` | Delete a tag (removed from all assets) | Yes |
+| `tag_assets` | Add a tag to multiple assets | Yes |
+| `untag_assets` | Remove a tag from multiple assets | Yes |
 
 ---
 
