@@ -163,6 +163,9 @@ class ImmichClient:
             body["isTrashed"] = is_trashed
         if asset_type:
             body["type"] = asset_type
+        # Ensure at least one filter (Immich /search/metadata requires it)
+        if len(body) == 2:  # only page and size
+            body["isArchived"] = False
         return await self._request("POST", "/search/metadata", json=body)
 
     async def run_asset_job(self, asset_ids: list[str], name: str) -> None:
@@ -585,14 +588,15 @@ class ImmichClient:
 
         stat = os.stat(file_path)
         filename = os.path.basename(file_path)
-        created = datetime.fromtimestamp(stat.st_birthtime, tz=timezone.utc).isoformat()
+        birth = getattr(stat, 'st_birthtime', stat.st_mtime)
+        created = datetime.fromtimestamp(birth, tz=timezone.utc).isoformat()
         modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
 
         url = f"{self.base_url}/api/assets"
         with open(file_path, "rb") as f:
             files = {"assetData": (filename, f, "application/octet-stream")}
             data = {
-                "deviceAssetId": filename,
+                "deviceAssetId": f"{filename}-{stat.st_size}-{int(stat.st_mtime)}",
                 "deviceId": "MCP Upload",
                 "fileCreatedAt": created,
                 "fileModifiedAt": modified,

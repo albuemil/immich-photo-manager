@@ -700,8 +700,11 @@ async def get_shared_link(ctx: Context, link_id: str) -> str:
     Args:
         link_id: The shared link's unique ID (from list_shared_links).
     """
-    result = await _client(ctx).get_shared_link(link_id)
-    return json.dumps(result, default=str)
+    try:
+        result = await _client(ctx).get_shared_link(link_id)
+        return json.dumps(result, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -711,8 +714,8 @@ async def update_shared_link(
     allow_download: bool | None = None,
     show_metadata: bool | None = None,
     allow_upload: bool | None = None,
-    description: str = "",
-    expiry_at: str = "",
+    description: str | None = None,
+    expiry_at: str | None = None,
 ) -> str:
     """Update a shared link's permissions or expiry.
 
@@ -721,8 +724,8 @@ async def update_shared_link(
         allow_download: Allow visitors to download photos.
         show_metadata: Show EXIF metadata to visitors.
         allow_upload: Allow visitors to upload photos.
-        description: Link description.
-        expiry_at: Expiry date (ISO 8601). Empty string to remove expiry.
+        description: Link description. Pass empty string to clear.
+        expiry_at: Expiry date (ISO 8601). Pass empty string to remove expiry.
     """
     fields: dict = {}
     if allow_download is not None:
@@ -731,14 +734,17 @@ async def update_shared_link(
         fields["showMetadata"] = show_metadata
     if allow_upload is not None:
         fields["allowUpload"] = allow_upload
-    if description:
-        fields["description"] = description
-    if expiry_at:
-        fields["expiresAt"] = expiry_at
+    if description is not None:
+        fields["description"] = description  # empty string clears it
+    if expiry_at is not None:
+        fields["expiresAt"] = expiry_at if expiry_at else None  # empty string removes expiry
     if not fields:
         return json.dumps({"error": "No fields to update."})
-    result = await _client(ctx).update_shared_link(link_id, **fields)
-    return json.dumps(result, default=str)
+    try:
+        result = await _client(ctx).update_shared_link(link_id, **fields)
+        return json.dumps(result, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -748,8 +754,11 @@ async def delete_shared_link(ctx: Context, link_id: str) -> str:
     Args:
         link_id: The shared link's unique ID.
     """
-    await _client(ctx).delete_shared_link(link_id)
-    return json.dumps({"deleted": True, "link_id": link_id})
+    try:
+        await _client(ctx).delete_shared_link(link_id)
+        return json.dumps({"deleted": True, "link_id": link_id})
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -989,8 +998,11 @@ async def resolve_duplicates(ctx: Context, groups: list[dict]) -> str:
 @mcp.tool()
 async def list_tags(ctx: Context) -> str:
     """List all tags with their IDs, names, and colors."""
-    result = await _client(ctx).list_tags()
-    return json.dumps({"total": len(result), "tags": result}, default=str)
+    try:
+        result = await _client(ctx).list_tags()
+        return json.dumps({"total": len(result), "tags": result}, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -1000,8 +1012,11 @@ async def get_tag(ctx: Context, tag_id: str) -> str:
     Args:
         tag_id: The tag's unique ID.
     """
-    result = await _client(ctx).get_tag(tag_id)
-    return json.dumps(result, default=str)
+    try:
+        result = await _client(ctx).get_tag(tag_id)
+        return json.dumps(result, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -1012,28 +1027,34 @@ async def create_tag(ctx: Context, name: str, color: str = "") -> str:
         name: Tag name (e.g. 'Vacation', 'Family', 'Work').
         color: Optional hex color (e.g. '#FF5733').
     """
-    result = await _client(ctx).create_tag(name, color=color or None)
-    return json.dumps(result, default=str)
+    try:
+        result = await _client(ctx).create_tag(name, color=color or None)
+        return json.dumps(result, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
-async def update_tag(ctx: Context, tag_id: str, name: str = "", color: str = "") -> str:
+async def update_tag(ctx: Context, tag_id: str, name: str | None = None, color: str | None = None) -> str:
     """Update a tag's name or color.
 
     Args:
         tag_id: The tag's unique ID.
-        name: New name (empty = don't change).
-        color: New hex color (empty = don't change).
+        name: New name. Omit to leave unchanged.
+        color: New hex color. Omit to leave unchanged.
     """
     fields: dict = {}
-    if name:
+    if name is not None:
         fields["name"] = name
-    if color:
+    if color is not None:
         fields["color"] = color
     if not fields:
         return json.dumps({"error": "No fields to update. Provide name or color."})
-    result = await _client(ctx).update_tag(tag_id, **fields)
-    return json.dumps(result, default=str)
+    try:
+        result = await _client(ctx).update_tag(tag_id, **fields)
+        return json.dumps(result, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -1043,8 +1064,11 @@ async def delete_tag(ctx: Context, tag_id: str) -> str:
     Args:
         tag_id: The tag's unique ID.
     """
-    await _client(ctx).delete_tag(tag_id)
-    return json.dumps({"deleted": True, "tag_id": tag_id})
+    try:
+        await _client(ctx).delete_tag(tag_id)
+        return json.dumps({"deleted": True, "tag_id": tag_id})
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -1055,8 +1079,13 @@ async def tag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
         tag_id: The tag to apply.
         asset_ids: List of asset IDs to tag.
     """
-    result = await _client(ctx).tag_assets(tag_id, asset_ids)
-    return json.dumps({"tag_id": tag_id, "tagged": len(asset_ids), "result": result}, default=str)
+    if not asset_ids:
+        return json.dumps({"error": "asset_ids cannot be empty."})
+    try:
+        result = await _client(ctx).tag_assets(tag_id, asset_ids)
+        return json.dumps({"tag_id": tag_id, "tagged": len(asset_ids), "result": result}, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 @mcp.tool()
@@ -1067,8 +1096,13 @@ async def untag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
         tag_id: The tag to remove.
         asset_ids: List of asset IDs to untag.
     """
-    result = await _client(ctx).untag_assets(tag_id, asset_ids)
-    return json.dumps({"tag_id": tag_id, "untagged": len(asset_ids), "result": result}, default=str)
+    if not asset_ids:
+        return json.dumps({"error": "asset_ids cannot be empty."})
+    try:
+        result = await _client(ctx).untag_assets(tag_id, asset_ids)
+        return json.dumps({"tag_id": tag_id, "untagged": len(asset_ids), "result": result}, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 # ── Upload ─────────────────────────────────────────────────
@@ -1094,6 +1128,12 @@ async def upload_asset(ctx: Context, file_path: str, album_id: str = "") -> str:
     if not os.path.isfile(file_path):
         return json.dumps({"error": f"File not found: {file_path}"})
 
+    # Resolve symlinks and verify real path
+    real_path = os.path.realpath(file_path)
+    if real_path != file_path and os.path.islink(file_path):
+        return json.dumps({"error": "Symlinks are not allowed for security."})
+    file_path = real_path
+
     ext = os.path.splitext(file_path)[1].lower()
     if ext not in ALLOWED_UPLOAD_EXTENSIONS:
         return json.dumps({"error": f"Unsupported file type: {ext}. Allowed: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}"})
@@ -1103,7 +1143,10 @@ async def upload_asset(ctx: Context, file_path: str, album_id: str = "") -> str:
         return json.dumps({"error": f"File too large: {size / 1024 / 1024:.1f}MB. Max: 25MB."})
 
     client = _client(ctx)
-    result = await client.upload_asset(file_path)
+    try:
+        result = await client.upload_asset(file_path)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
     if album_id and result.get("id"):
         try:
@@ -1141,17 +1184,20 @@ async def list_assets(
         page: Page number (default 1).
         size: Results per page (default 50, max 200).
     """
-    result = await _client(ctx).list_assets(
-        is_favorite=is_favorite,
-        is_archived=is_archived,
-        is_trashed=is_trashed,
-        asset_type=asset_type or None,
-        page=page,
-        size=min(size, 200),
-    )
-    assets = result.get("assets", {}).get("items", [])
-    total = result.get("assets", {}).get("total", 0)
-    return json.dumps({"total": total, "page": page, "assets": assets}, default=str)
+    try:
+        result = await _client(ctx).list_assets(
+            is_favorite=is_favorite,
+            is_archived=is_archived,
+            is_trashed=is_trashed,
+            asset_type=asset_type or None,
+            page=page,
+            size=min(size, 200),
+        )
+        assets = result.get("assets", {}).get("items", [])
+        total = result.get("assets", {}).get("total", 0)
+        return json.dumps({"total": total, "page": page, "assets": assets}, default=str)
+    except httpx.HTTPStatusError as e:
+        return json.dumps({"error": f"Immich API error: {e.response.status_code}", "detail": e.response.text[:200]})
 
 
 # ── HTTP App (for Streamable HTTP transport) ────────────────
