@@ -693,6 +693,64 @@ async def create_shared_link(
     )
 
 
+@mcp.tool()
+async def get_shared_link(ctx: Context, link_id: str) -> str:
+    """Get full details of a shared link including permissions and assets.
+
+    Args:
+        link_id: The shared link's unique ID (from list_shared_links).
+    """
+    result = await _client(ctx).get_shared_link(link_id)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def update_shared_link(
+    ctx: Context,
+    link_id: str,
+    allow_download: bool | None = None,
+    show_metadata: bool | None = None,
+    allow_upload: bool | None = None,
+    description: str = "",
+    expiry_at: str = "",
+) -> str:
+    """Update a shared link's permissions or expiry.
+
+    Args:
+        link_id: The shared link's unique ID.
+        allow_download: Allow visitors to download photos.
+        show_metadata: Show EXIF metadata to visitors.
+        allow_upload: Allow visitors to upload photos.
+        description: Link description.
+        expiry_at: Expiry date (ISO 8601). Empty string to remove expiry.
+    """
+    fields: dict = {}
+    if allow_download is not None:
+        fields["allowDownload"] = allow_download
+    if show_metadata is not None:
+        fields["showMetadata"] = show_metadata
+    if allow_upload is not None:
+        fields["allowUpload"] = allow_upload
+    if description:
+        fields["description"] = description
+    if expiry_at:
+        fields["expiresAt"] = expiry_at
+    if not fields:
+        return json.dumps({"error": "No fields to update."})
+    result = await _client(ctx).update_shared_link(link_id, **fields)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def delete_shared_link(ctx: Context, link_id: str) -> str:
+    """Delete (revoke) a shared link. The link will no longer be accessible.
+
+    Args:
+        link_id: The shared link's unique ID.
+    """
+    await _client(ctx).delete_shared_link(link_id)
+    return json.dumps({"deleted": True, "link_id": link_id})
+
 
 @mcp.tool()
 async def get_connection_info(ctx: Context) -> str:
