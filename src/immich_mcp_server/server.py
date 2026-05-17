@@ -925,6 +925,94 @@ async def resolve_duplicates(ctx: Context, groups: list[dict]) -> str:
     })
 
 
+# ── Tags ──────────────────────────────────────────────────
+
+
+@mcp.tool()
+async def list_tags(ctx: Context) -> str:
+    """List all tags with their IDs, names, and colors."""
+    result = await _client(ctx).list_tags()
+    return json.dumps({"total": len(result), "tags": result}, default=str)
+
+
+@mcp.tool()
+async def get_tag(ctx: Context, tag_id: str) -> str:
+    """Get details for a specific tag.
+
+    Args:
+        tag_id: The tag's unique ID.
+    """
+    result = await _client(ctx).get_tag(tag_id)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def create_tag(ctx: Context, name: str, color: str = "") -> str:
+    """Create a new tag.
+
+    Args:
+        name: Tag name (e.g. 'Vacation', 'Family', 'Work').
+        color: Optional hex color (e.g. '#FF5733').
+    """
+    result = await _client(ctx).create_tag(name, color=color or None)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def update_tag(ctx: Context, tag_id: str, name: str = "", color: str = "") -> str:
+    """Update a tag's name or color.
+
+    Args:
+        tag_id: The tag's unique ID.
+        name: New name (empty = don't change).
+        color: New hex color (empty = don't change).
+    """
+    fields: dict = {}
+    if name:
+        fields["name"] = name
+    if color:
+        fields["color"] = color
+    if not fields:
+        return json.dumps({"error": "No fields to update. Provide name or color."})
+    result = await _client(ctx).update_tag(tag_id, **fields)
+    return json.dumps(result, default=str)
+
+
+@mcp.tool()
+async def delete_tag(ctx: Context, tag_id: str) -> str:
+    """Delete a tag. The tag is removed from all assets.
+
+    Args:
+        tag_id: The tag's unique ID.
+    """
+    await _client(ctx).delete_tag(tag_id)
+    return json.dumps({"deleted": True, "tag_id": tag_id})
+
+
+@mcp.tool()
+async def tag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
+    """Add a tag to multiple assets.
+
+    Args:
+        tag_id: The tag to apply.
+        asset_ids: List of asset IDs to tag.
+    """
+    result = await _client(ctx).tag_assets(tag_id, asset_ids)
+    return json.dumps({"tag_id": tag_id, "tagged": len(asset_ids), "result": result}, default=str)
+
+
+@mcp.tool()
+async def untag_assets(ctx: Context, tag_id: str, asset_ids: list[str]) -> str:
+    """Remove a tag from multiple assets.
+
+    Args:
+        tag_id: The tag to remove.
+        asset_ids: List of asset IDs to untag.
+    """
+    result = await _client(ctx).untag_assets(tag_id, asset_ids)
+    return json.dumps({"tag_id": tag_id, "untagged": len(asset_ids), "result": result}, default=str)
+
+
 # ── HTTP App (for Streamable HTTP transport) ────────────────
 
 app = mcp.streamable_http_app()
