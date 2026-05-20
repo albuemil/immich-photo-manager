@@ -8,3 +8,8 @@ __pycache__/
 immich-mcp-server
 scripts/location_inventory.json
 drolosoft-update-prompt.md
+docs/superpowers/
+.claude/settings.local.json
+outputs/
+dist/
+*.egg-info/
