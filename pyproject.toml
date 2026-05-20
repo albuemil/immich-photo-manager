@@ -24,9 +24,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "httpx>=0.24.0",
-  "mcp>=1.0.0",
-  "uvicorn>=0.24.0",
+  "httpx>=0.24.0,<1.0",
+  "mcp>=1.0.0,<2.0",
+  "uvicorn>=0.24.0,<1.0",
 ]
 
 [project.urls]
