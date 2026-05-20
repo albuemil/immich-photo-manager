@@ -4,8 +4,12 @@ import os
 import sys
 
 
-def main():
-    transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
+def _run(default_transport: str = "http"):
+    """Run the MCP server with the given default transport.
+
+    The MCP_TRANSPORT env var always takes precedence.
+    """
+    transport = os.environ.get("MCP_TRANSPORT", default_transport).lower()
 
     if transport == "stdio":
         from .server import mcp
@@ -23,5 +27,11 @@ def main():
         )
 
 
+def main():
+    """Console script entry point (uvx). Defaults to stdio."""
+    _run(default_transport="stdio")
+
+
 if __name__ == "__main__":
-    main()
+    # python -m invocation. Defaults to http (backward compat).
+    _run(default_transport="http")
