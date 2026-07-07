@@ -87,6 +87,13 @@ Syncs 🏛️ landmark albums from GPS city/country metadata.
 
 ## Session Log
 
+### 2026-07-08
+- Immich v3.0.1 upgrade failed — postgres data directory was deleted by a cleanup script
+- Recovered from daily SQL dump (`immich-db-backup-20260707T020000-v3.0.1-pg14.19.sql.gz`) synced via rclone to `/root/!!!!Sync_with_jotta/Immich/backups/`
+- Dump restored into `postgres` database instead of `immich`; fixed by piping pg_dump between databases
+- Full recovery with <24h data loss; all 60k assets, 107 albums, 1243 people intact
+- Added `user_docs/postgres-recovery.md` with exact recovery steps
+
 ### 2026-06-21
 - Added `update_location_albums.py` — discovered Romanian cedilla diacritic mismatch in GeoNames
 - Updated both skills to read env vars from environment (removed hardcoded credential extraction)
