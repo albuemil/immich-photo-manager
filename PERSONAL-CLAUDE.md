@@ -81,11 +81,22 @@ Syncs 🏛️ landmark albums from GPS city/country metadata.
 |-------|-------------|--------------|
 | `/photos-update-people` | `photos-update-people.md` | Runs `update_people_albums.py` |
 | `/photos-update-locations` | `photos-update-locations.md` | Runs `update_location_albums.py` |
+| `/photos-update-gps-radius` | `photos-update-gps-radius.md` | Runs `update_gps_radius_albums.py` |
 | `/photos-rotate` | `photos-rotate.md` | Processes rotate LEFT / rotate RIGHT albums via MCP |
 
 ---
 
 ## Session Log
+
+### 2026-07-14
+- Fixed Immich v3 breaking change: `GET /api/albums/{id}` no longer returns assets; all scripts updated to use timeline API
+- Added `update_gps_radius_albums.py` — finds GPS-tagged photos within km radius of city center; covers Timișoara (12km), TGM (8km), Răstolița (10km), Ocna de Fier (10km)
+- Added `/photos-update-gps-radius` skill
+- Created `🏛️ RO/Târgu Mureș` album; added 252 photos via GPS radius search
+- Fixed 8 photos from 2019-07-30 incorrectly GPS-tagged as Răstolița (fix_missing_gps false positive); corrected to TGM coords
+- Fixed zoo GIF GPS to TGM Zoo location
+- Ran `fix_missing_gps.py --apply` → 284 GPS fixes applied across library
+- Album naming: renamed to `🐾 Speedy` and `🚁 Toys for big boys`
 
 ### 2026-07-08
 - Immich v3.0.1 upgrade failed — postgres data directory was deleted by a cleanup script

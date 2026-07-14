@@ -6,6 +6,25 @@ Versioning: `personal-vMAJOR.MINOR.PATCH` (independent from upstream plugin vers
 
 ---
 
+## personal-v1.3.0 — 2026-07-14
+
+### Added
+- `user_scripts/update_gps_radius_albums.py` — syncs landmark albums by GPS bounding box radius; configured for Timișoara (12km), Târgu Mureș (8km), Răstolița (10km), Ocna de Fier (10km)
+- `.claude/commands/photos-update-gps-radius.md` — `/photos-update-gps-radius` skill
+- `user_docs/postgres-recovery.md` — step-by-step recovery procedure for lost postgres data directory
+
+### Fixed
+- All `user_scripts/` that read album asset IDs now use the timeline API (`/api/timeline/buckets` + `/api/timeline/bucket`) — Immich v3 removed the `assets` array from `GET /api/albums/{id}`
+
+---
+
+## personal-v1.2.0 — 2026-07-08
+
+### Fixed
+- Recovered from lost postgres data directory using daily SQL dump backup
+
+---
+
 ## personal-v1.1.0 — 2026-06-21
 
 ### Added

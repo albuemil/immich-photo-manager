@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Batch GPS fix script for Immich library.
 Finds photos missing GPS that have same-day neighbors with GPS,
