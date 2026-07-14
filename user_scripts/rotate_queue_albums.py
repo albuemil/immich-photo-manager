@@ -44,9 +44,16 @@ async def list_albums(client: httpx.AsyncClient) -> list[dict]:
 
 
 async def get_album_assets(client: httpx.AsyncClient, album_id: str) -> list[str]:
-    resp = await client.get(f"{BASE_URL}/api/albums/{album_id}")
-    resp.raise_for_status()
-    return [a["id"] for a in resp.json().get("assets", [])]
+    buckets_resp = await client.get(f"{BASE_URL}/api/timeline/buckets", params={"albumId": album_id, "size": "MONTH"})
+    buckets_resp.raise_for_status()
+    ids: list[str] = []
+    for bucket in buckets_resp.json():
+        b_resp = await client.get(f"{BASE_URL}/api/timeline/bucket", params={
+            "albumId": album_id, "size": "MONTH", "timeBucket": bucket["timeBucket"]
+        })
+        b_resp.raise_for_status()
+        ids.extend(b_resp.json().get("id", []))
+    return ids
 
 
 async def get_current_rotation(client: httpx.AsyncClient, asset_id: str) -> int:
