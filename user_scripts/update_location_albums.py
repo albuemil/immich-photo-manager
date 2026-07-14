@@ -75,9 +75,16 @@ def parse_album_name(name: str) -> tuple[str, list[str]]:
 
 
 async def get_album_asset_ids(client: httpx.AsyncClient, album_id: str) -> set[str]:
-    resp = await client.get(f"{BASE_URL}/api/albums/{album_id}")
-    resp.raise_for_status()
-    return {a["id"] for a in resp.json().get("assets", [])}
+    buckets_resp = await client.get(f"{BASE_URL}/api/timeline/buckets", params={"albumId": album_id, "size": "MONTH"})
+    buckets_resp.raise_for_status()
+    ids: set[str] = set()
+    for bucket in buckets_resp.json():
+        b_resp = await client.get(f"{BASE_URL}/api/timeline/bucket", params={
+            "albumId": album_id, "size": "MONTH", "timeBucket": bucket["timeBucket"]
+        })
+        b_resp.raise_for_status()
+        ids.update(b_resp.json().get("id", []))
+    return ids
 
 
 async def search_by_city(client: httpx.AsyncClient, city: str, country: str) -> set[str]:
