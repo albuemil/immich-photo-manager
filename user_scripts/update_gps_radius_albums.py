@@ -29,7 +29,7 @@ HEADERS = {
 
 # city label → (album_id, center_lat, center_lon, radius_km)
 CITIES = {
-    "🏛️ RO/Timișoara":   ("e8909a30-2bf2-48a3-bace-e2532f68fe55", 45.754284, 21.196426, 8),
+    "🏛️ RO/Timișoara":   ("e8909a30-2bf2-48a3-bace-e2532f68fe55", 45.754284, 21.196426, 12),
     "🏛️ RO/Târgu Mureș": ("145d261e-dd2d-4ddb-99ca-321f46789d9a", 46.544438, 24.562016, 8),
     "🏛️ RO/Răstolița":   ("67aeb3ce-2f35-4c6d-9877-845c0b801f23", 46.973407, 24.973931, 10),
     "🏛️ RO/Ocna de Fier":("47471ded-640e-4f50-b26a-ca13a7a616bc", 45.341249, 21.773167, 10),
