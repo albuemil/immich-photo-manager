@@ -6,6 +6,13 @@ Versioning: `personal-vMAJOR.MINOR.PATCH` (independent from upstream plugin vers
 
 ---
 
+## personal-v1.3.1 — 2026-07-20
+
+### Security
+- Removed hardcoded Immich API key from `create_date_album.py`, `fix_missing_dates.py`, `fix_missing_gps.py` — now read `IMMICH_API_KEY`/`IMMICH_BASE_URL` from the environment, matching the other scripts. The key had been committed in plaintext since these scripts' initial commits, in this public repo. Key rotation itself tracked in `infra-map/TODO.md`.
+
+---
+
 ## personal-v1.3.0 — 2026-07-14
 
 ### Added
