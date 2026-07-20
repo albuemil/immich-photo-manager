@@ -3,6 +3,7 @@ Fix photos missing a date by inferring from filename patterns.
 Common patterns: 20190630_143529, IMG-20190630-WA0001, Screenshot_20190630-143529, etc.
 """
 import json
+import os
 import re
 import sys
 import time
@@ -10,8 +11,11 @@ from datetime import datetime, timezone
 
 import httpx
 
-BASE_URL = "http://10.198.5.100:2283"
-API_KEY = "Kmz91MB87HCAUiALgS4QSic0QBbdQA7TJ0ONsKslVKY"
+BASE_URL = os.environ.get("IMMICH_BASE_URL", "http://localhost:2283")
+API_KEY = os.environ.get("IMMICH_API_KEY", "")
+if not API_KEY:
+    print("Error: IMMICH_API_KEY environment variable required")
+    sys.exit(1)
 HEADERS = {"x-api-key": API_KEY, "Accept": "application/json"}
 
 # Ordered list of filename date patterns (most specific first)
@@ -165,7 +169,7 @@ def main():
         print(f"  {f['path']}")
         print(f"    → {f['inferred_date']}")
 
-    log_path = "/mnt/d/Work/Claude/immich-photo-manager/date_fix_log.json"
+    log_path = "/mnt/d/Work/Claude/apps-immich/date_fix_log.json"
     with open(log_path, "w") as out:
         json.dump(fixes, out, indent=2)
     print(f"\nFull log saved to: {log_path}")

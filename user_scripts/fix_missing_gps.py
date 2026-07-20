@@ -5,6 +5,7 @@ Finds photos missing GPS that have same-day neighbors with GPS,
 then proposes and applies fixes via neighbor inference.
 """
 import json
+import os
 import sys
 import time
 from collections import defaultdict
@@ -12,8 +13,11 @@ from datetime import datetime, timezone
 
 import httpx
 
-BASE_URL = "http://10.198.5.100:2283"
-API_KEY = "Kmz91MB87HCAUiALgS4QSic0QBbdQA7TJ0ONsKslVKY"
+BASE_URL = os.environ.get("IMMICH_BASE_URL", "http://localhost:2283")
+API_KEY = os.environ.get("IMMICH_API_KEY", "")
+if not API_KEY:
+    print("Error: IMMICH_API_KEY environment variable required")
+    sys.exit(1)
 HEADERS = {"x-api-key": API_KEY, "Accept": "application/json"}
 MAX_TIME_GAP_HOURS = 2  # Only infer GPS if nearest anchor is within 2h
 
@@ -230,7 +234,7 @@ def main():
         print(f"    anchor: {f['anchor_path']} (gap: {f['gap_hours']}h)", flush=True)
 
     # Save full fix log
-    log_path = "/mnt/d/Work/Claude/immich-photo-manager/gps_fix_log.json"
+    log_path = "/mnt/d/Work/Claude/apps-immich/gps_fix_log.json"
     with open(log_path, "w") as out:
         json.dump(fixes, out, indent=2)
     print(f"\nFull fix log saved to: {log_path}", flush=True)

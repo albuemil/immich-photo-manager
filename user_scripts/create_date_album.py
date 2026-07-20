@@ -24,11 +24,15 @@ Examples:
 """
 import argparse
 import json
+import os
 import sys
 import urllib.request
 
-BASE_URL = "http://10.198.5.100:2283"
-API_KEY = "Kmz91MB87HCAUiALgS4QSic0QBbdQA7TJ0ONsKslVKY"
+BASE_URL = os.environ.get("IMMICH_BASE_URL", "http://localhost:2283")
+API_KEY = os.environ.get("IMMICH_API_KEY", "")
+if not API_KEY:
+    print("Error: IMMICH_API_KEY environment variable required")
+    sys.exit(1)
 HEADERS = {
     "x-api-key": API_KEY,
     "Accept": "application/json",
